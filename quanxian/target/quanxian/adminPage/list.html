@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        span{
+            color: #1ba0e3;
+        }
+
+        table{
+            border: 1px;
+        }
+    </style>
+</head>
+<script type="text/javascript" src="../js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../js/LocationIP.js"></script>
+<script>
+    var currPage = 1;
+    var totalPage = -1;
+    var numPerPage = 4;
+    var totalResults = -1;
+    $(function () {
+        //获取全部路线
+        sendAjax();
+    });
+
+    //删除按钮
+    function deleteRoutine(routineID) {
+        if (confirm("是否删除该线路？")) {
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/EditRoutineServlet",
+                type: "post",
+                data: {
+                    method: "deleteRoutine",
+                    routineID: routineID
+                },
+                dataType: "json",
+                success: function (data) {
+                    console.log("errorCode:" + data.errorCode);
+                    alert(data.result);
+                    location.reload();
+                },
+                error: function () {
+                    alert("err fun()");
+                }
+            });
+        }
+    }
+
+    //修改按钮
+    function modifyRoutine(routineID) {
+        console.log("修改" + routineID);
+        window.sessionStorage.setItem("routineID", routineID);
+        location.href = "modify.html";
+    }
+
+    //上一页
+    function pre() {
+        //console.log("上一页" + currPage); //测试
+        if (currPage != 1) {
+            currPage--;
+            sendAjax();
+            $("#currPage").html(currPage);
+        } else {
+            alert("已是第一页");
+        }
+    }
+
+    //下一页
+    function next() {
+        //console.log("下一页" + currPage); //测试
+        if (currPage != totalPage) {
+            currPage++;
+            sendAjax();
+            $("#currPage").html(currPage);
+        } else {
+            alert("已是最后一页");
+        }
+    }
+
+    //发Ajax获取内容
+    function sendAjax() {
+        $.ajax({
+            url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ListServlet",
+            dataType: "json",
+            type: "post",
+            data: {
+                'currPage': currPage,
+                'totalPage': totalPage,
+                'numPerPage': numPerPage,
+                'totalResults': totalResults
+            },
+            success: function (data) {
+                if (data.errorCode == 200) {
+
+                    totalPage = data.result[0];
+                    totalResults = data.result[2];
+                    var routines = data.result[1];
+
+                    $("#totalPage").html(totalPage);
+                    $("#totalResults").html(totalResults);
+
+
+                    $("#routineTable").html("<tr><th>编号</th><th>项目名称</th><th>操作</th></tr>"); //一同清除了上一页内容
+                    for (var i = 0; i < routines.length; i++) {
+                        var str = "<tr><td>" +
+                            routines[i].id +
+                            "</td><td>" +
+                            routines[i].title +
+                            "</td><td><span onclick='modifyRoutine(" +
+                            routines[i].id +
+                            ")'>" +
+                            "修改" +
+                            "</span>&nbsp;&nbsp;<span onclick='deleteRoutine(" +
+                            routines[i].id +
+                            ")'>" +
+                            "删除" +
+                            "</span></td>\</tr>";
+                        $("#routineTable").append(str);
+                    }
+                }
+            },
+            error: function () {
+                alert("err fun()");
+            }
+        });
+    }
+    
+    //新增路线
+    function newRoutine() {
+        $.ajax({
+            url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/newBlankRoutineServlet",
+            type: "post",
+            dataType: "json",
+            success: function (data) {
+                if (data.errorCode == 200) {
+                    alert("操作成功！");
+                    //跳转最后一页
+                }
+            },
+            error: function () {
+                alert("newBlankRoutineServlet err fun()");
+            }
+        });
+    }
+</script>
+<body>
+    <h1>路线发布与修改</h1>
+    <!--
+    <ul>
+        <li>
+            编号 名称 操作
+        </li>
+        <li>
+            1 北京游 删除 修改
+        </li>
+    </ul>
+    -->
+    <table id="routineTable">
+        <!--
+        <tr>
+            <th>编号</th>
+            <th>项目名称</th>
+            <th>操作</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>北京游行啦啦啦啦啦啦啦啦阿联</td>
+            <td>
+                <span>修改</span>&nbsp;&nbsp;&nbsp;
+                <span onclick='deleteRoutine(1)'>删除</span>
+            </td>
+        </tr>
+        -->
+    </table>
+    <p><span onclick="newRoutine()" style="color: #de3226; font-size: small">+新增路线</span></p>
+    <div id="pageInfo">
+        <span id="nextPage" onclick="pre()">上一页</span>
+        第<span id="currPage">1</span>页
+        <span id="prePage" onclick="next()">下一页</span>
+        &nbsp;&nbsp;共<span id="totalPage"></span>页
+        总记录<span id="totalResults"></span>条
+    </div>
+</body>
+</html>

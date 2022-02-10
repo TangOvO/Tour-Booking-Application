@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<!-- 是否启动webapp功能，会删除默认的苹果工具栏和菜单栏。 -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<!-- 这个主要是根据实际的页面设计的主体色为搭配来进行设置。 -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<!-- 忽略页面中的数字识别为电话号码,email识别 -->
+		<meta name="format-detection" content="telephone=no, email=no" />
+		<!-- 启用360浏览器的极速模式(webkit) -->
+		<meta name="renderer" content="webkit">
+		<!-- 避免IE使用兼容模式 -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<!-- 针对手持设备优化，主要是针对一些老的不识别viewport的浏览器，比如黑莓 -->
+		<meta name="HandheldFriendly" content="true">
+		<!-- 微软的老式浏览器 -->
+		<meta name="MobileOptimized" content="320">
+		<!-- uc强制竖屏 -->
+		<meta name="screen-orientation" content="portrait">
+		<!-- QQ强制竖屏 -->
+		<meta name="x5-orientation" content="portrait">
+		<!-- UC强制全屏 -->
+		<meta name="full-screen" content="yes">
+		<!-- QQ强制全屏 -->
+		<meta name="x5-fullscreen" content="true">
+		<!-- UC应用模式 -->
+		<meta name="browsermode" content="application">
+		<!-- QQ应用模式 -->
+		<meta name="x5-page-mode" content="app">
+		<!--去除缓存-->
+		<meta http-equiv="pragram" content="no-cache">
+		<title>i旅行-时间日期选择</title>
+
+		<!-- Bootstrap Include -->
+		<link href="lib/mobiscroll/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+
+		<link rel="stylesheet" href="lib/mobiscroll/css/mobiscroll.custom-2.17.1.min.css">
+		<link rel="stylesheet" href="css/reset.css">
+
+		<link id="css" rel="stylesheet" href="css/date.css"><!--动态修改href-->
+
+		<script type="text/javascript" src="js/zepto/zepto.js"></script>
+		<script type="text/javascript" src="js/zepto/event.js"></script>
+		<script type="text/javascript" src="js/zepto/ajax.js"></script>
+		<script type="text/javascript" src="js/zepto/ie.js"></script>
+		<script type="text/javascript" src="js/zepto/touch.js"></script>
+		<script type="text/javascript" src="js/LocationIP.js"></script>
+
+		<script>
+			var date;
+			var numKid;
+			var numAdult;
+			var routineID;
+			var title;
+			var price;
+			var totalPrice;
+			var page2Total;
+			var guests;
+			var orderId;
+			$(function () {
+
+				/**
+				 * 第一页js
+				 */
+				numKid = 0;
+				numAdult = 1;
+				routineID = window.sessionStorage.getItem("routineID");
+				title = window.sessionStorage.getItem("title");
+				price = window.sessionStorage.getItem("price");
+
+				//$("#goBack").attr("href", document.referrer);
+				$("#pricePer").html(price);
+				totalPrice = price * numAdult;
+				$("#total").html(totalPrice);
+				$("#numAdult").attr("value", numAdult);
+				$("#numKid").attr("value", numKid);
+
+				//加减按钮方法
+				//$("#plusAdult").tap() 引入jQuery冲突，无法使用tap事件
+				document.getElementById("plusAdult").addEventListener("click", function () {
+					console.log("plusAdult");
+					if (numKid + numAdult < 9) {
+						numAdult++;
+						$("#numAdult").val(numAdult);
+						renewTotal();
+					} else {
+						alert("已达人数上限");
+					}
+				});
+				document.getElementById("minusAdult").addEventListener("click", function () {
+					console.log("minusAdult");
+					if (numAdult > 1) {
+						numAdult--;
+						$("#numAdult").val(numAdult);
+						renewTotal();
+					}
+				});
+				document.getElementById("plusKid").addEventListener("click", function () {
+					console.log("plusKid");
+					if (numKid + numAdult < 9) {
+						numKid++;
+						$("#numKid").val(numKid);
+						renewTotal();
+					} else {
+						alert("已达人数上限");
+					}
+				});
+				document.getElementById("minusKid").addEventListener("click", function () {
+					console.log("minusKid");
+					if (numKid > 0) {
+						numKid--;
+						$("#numKid").val(numKid);
+						renewTotal();
+					}
+				});
+
+				//总金额计算
+				function renewTotal() {
+					console.log("price-" + price);
+					console.log("numAdult-" + numAdult);
+					totalPrice = price * numAdult;
+					$("#total").html(totalPrice);
+				}
+
+				//日期设置
+				var now = new Date();
+				var currYear = now.getFullYear();
+				var currMonth = now.getMonth() ;
+				var currDay = now.getDate();
+				var option = {
+					preset: 'date', //日期，可选：date\datetime\time\tree_list\image_text\select
+					theme: 'ios', //皮肤样式，可选：default\android\android-ics light\android-ics\ios\jqm\sense-ui\wp light\wp
+					display: 'modal', //显示方式 ，可选：modal\inline\bubble\top\bottom
+					lang: "Chinese",
+					showLabel: true,//false  显示头部
+					rows: 5,//显示多少行，定义3就显示3行,
+					dateFormat: 'yyyy-mm-dd', // 面板日期格式
+					setText: '确认', //确认按钮名称
+					cancelText: '取消', //取消按钮名称
+					dateOrder: 'yyyymmdd', //面板中日期排列格式
+					dayText: '日',
+					monthText: '月',
+					yearText: '年', //面板中年月日文字
+					// showNow: false,
+					nowText: "今",
+					endYear: currYear, //结束年份
+					minDate: new Date(currYear, currMonth - 1, currDay  - 1),
+					onSelect: function (textVale, inst) { //选中时触发事件
+						$("#dateInput").val(textVale);
+						date = textVale;
+						console.log("选择的日期" + date);
+					},
+					onClose: function (textVale, inst) { //插件效果退出时执行 inst:表示点击的状态反馈：set/cancel
+						console.log("textVale--"  + textVale);
+						console.log(this.id);//this表示调用该插件的对象
+					}
+
+					//wheels:[[11,12,13],[21,22,23],[01,02,03]],// 当前你定义的数组(即要滚动的数组),
+					//defaultValue: [12,22]//默认显示当前滚动到哪个值,
+					// formatResult://滚动到某个值后执行某个方法
+					// function(){
+					//   console.log(1);
+					// }
+				}
+
+				//面板显示日期
+				$("#demo").mobiscroll().calendar(option);
+				document.getElementById("dateSelect").addEventListener("click", function (ev) {
+					$("#demo").mobiscroll("show");
+
+				});
+
+				//第一页下一步
+				document.getElementById("nextStep1").addEventListener("click", function (ev) {
+					//判断日期是否选择
+					if (date == undefined) {
+						alert("请选择日期！");
+						return false;
+					}
+					$("#date").hide();
+					$("#resource").show();
+					$("#css").attr('href', 'css/resource.css');
+					//第二页内容处理
+					totalPrice = price * numAdult;
+					renewTotal2();
+					$("#title2").html(title);
+					$("#total2").html(page2Total);
+					$("#adult2").html(numAdult);
+					$("#kid2").html(numKid);
+					$("#date2").html(date);
+				});
+
+				/**
+				 * 第二页js
+				 */
+
+
+				//总价计算
+				function renewTotal2() {
+					var num1 = $("#danfangcha").val() * 1;
+					//console.log("num1=" + num1);
+					var num2 = $("#shuishangleyuan").val() * 1;
+					//console.log("num2=" + num2);
+					var num3 = $("#tianyahaijiao").val() * 1;
+					//console.log("num3=" + num3);
+					page2Total = totalPrice + num1 * 620 + num2 * 50 + num3 * 36;
+					//console.log("price=" + totalPrice);
+					$("#total2").html(page2Total);
+				}
+
+				//第二页的返回按钮
+				document.getElementById("page2back").addEventListener('click', function (ev) {
+					$("#date").show();
+					$("#resource").hide();
+					$("#css").attr('href', 'css/date.css');
+				});
+
+				//加减按钮
+				document.getElementById("add1").addEventListener('click', function (ev) {
+					var num = $("#danfangcha").val() * 1;
+					num++;
+					$("#danfangcha").val(num);
+					renewTotal2();
+				});
+				document.getElementById("add2").addEventListener('click', function (ev) {
+					var num = $("#shuishangleyuan").val() * 1;
+					num++;
+					$("#shuishangleyuan").val(num);
+					renewTotal2();
+				});
+				document.getElementById("add3").addEventListener('click', function (ev) {
+					var num = $("#tianyahaijiao").val() * 1;
+					num++;
+					$("#tianyahaijiao").val(num);
+					renewTotal2();
+				});
+
+				document.getElementById("minus1").addEventListener('click', function (ev) {
+					var num = $("#danfangcha").val() * 1;
+					if (num > 0) {
+						num--;
+						$("#danfangcha").val(num);
+						renewTotal2();
+					}
+				});
+				document.getElementById("minus2").addEventListener('click', function (ev) {
+					var num = $("#shuishangleyuan").val() * 1;
+					if (num > 0) {
+						num--;
+						$("#shuishangleyuan").val(num);
+						renewTotal2();
+					}
+				});
+				document.getElementById("minus3").addEventListener('click', function (ev) {
+					var num = $("#tianyahaijiao").val() * 1;
+					if (num > 0) {
+						num--;
+						$("#tianyahaijiao").val(num);
+						renewTotal2();
+					}
+				});
+
+				//第二页下一步
+				document.getElementById("nextStep2").addEventListener("click", function (ev) {
+					$("#resource").hide();
+					$("#fill").show();
+					$("#css").attr('href', 'css/fill.css');
+					//设置第三页数据
+					$("#total3").html(page2Total);
+					$(".fill-restrict h3").html(title);
+					$("#kid").html(numKid);
+					$("#adult").html(numAdult);
+					$("#date3").html(date);
+					//生成用户信息填写表单
+					$("#info").html("");
+					for (var i = 0; i < numAdult; i++) {
+						var str = "<div class=\"fill-select fill-change\"><div class=\"fill-old\">" +
+								"<b>成</b><h2>用户姓名" +
+								"<input id='adultName" +
+								i +
+								"' type=\"text\" placeholder=\"用户姓名\">" +
+								"</h2>" +
+								"<h2>电话号码" +
+								"<input id='adultPhone" +
+								i +
+								"' type=\"text\" placeholder=\"电话号码\">" +
+								"</h2>" +
+								"<h2>身份证号" +
+								"<input id='adultID" +
+								i +
+								"' type=\"text\" placeholder=\"身份证号码\">" +
+								"</h2></div></div>";
+						$("#info").append(str);
+					}
+					for (var i = 0; i < numKid; i++) {
+						var str = "<div class=\"fill-select fill-change\"><div class=\"fill-old\">" +
+								"<b>童</b><h2>用户姓名" +
+								"<input id='kidName" +
+								i +
+								"' type=\"text\" placeholder=\"用户姓名\">" +
+								"</h2>" +
+								"<h2>身份证号" +
+								"<input id='kidID" +
+								i +
+								"' type=\"text\" placeholder=\"身份证号码\">" +
+								"</h2></div></div>";
+						$("#info").append(str);
+					}
+
+				});
+
+				//第三页返回
+				document.getElementById("page3back").addEventListener('click', function (ev) {
+					$("#resource").show();
+					$("#fill").hide();
+					$("#css").attr('href', 'css/resource.css');
+				});
+
+				//ajax提交
+				document.getElementById("pay").addEventListener("click", function (ev) {
+					var guestObj = {
+						/**
+						 *	订单orderID;
+						 	姓名name;
+						 	身份证号identity;
+						 	电话号码phoneNumber;
+						 	身份（成人，儿童）status;
+						 */
+						orderID: '',
+						name: '',
+						identity: '',
+						phoneNumber: '',
+						status: ''
+					};
+					var data1 = {};
+					data1.date = date;
+					data1.routineID = routineID;
+					data1.adult = numAdult;
+					data1.kid = numKid;
+					data1.payment = page2Total;
+					data1.guestsJSON;
+					guests = new Array();
+					//生成一个订单id，由时间和路线id组成
+
+					var now = new Date();
+					var ramdomOrderID = now.getFullYear().toString() + now.getMonth().toString() +
+							now.getDay().toString() + now.getHours().toString() + now.getMilliseconds().toString() + routineID;
+					orderId = ramdomOrderID;
+					for (var i = 0; i < numAdult; i++) {
+						//日期格式测试
+
+						console.log("time format getDate--" + now.getDate());
+						console.log("time format getFullYear--" + now.getFullYear());
+						console.log("time format getDay--" + now.getDay());
+						console.log("time format getMonth--" + now.getMonth());
+						console.log("time format getMilliseconds--" + now.getMilliseconds());
+
+
+
+						//guestObj.orderID = ramdomOrderID
+						console.log("orderID:" + guestObj.orderID); //测试
+						guestObj.status = '成人';
+						guestObj.name = $("#adultName" + i).val();
+						guestObj.phoneNumber = $("#adultPhone" + i).val();
+						guestObj.identity = $("#adultID" + i).val();
+						//闭包 data1.adults[i] = guestObj;
+
+						//防止闭包
+						guests[i] = JSON.stringify(guestObj);
+					}
+					for (var i = 0; i < numKid; i++) {
+						guestObj.status = '儿童';
+						guestObj.name = $("#kidName" + i).val();
+						guestObj.phoneNumber = null;
+						guestObj.identity = $("#kidID" + i).val();
+						//闭包 data1.adults[numAdult + i] = guestObj;
+
+						//防止闭包
+						guests[numAdult + i] = JSON.stringify(guestObj);
+					}
+					data1.guestsJSON = JSON.stringify(guests);
+					console.log("Guests JSON：" + JSON.stringify(guests)); //测试
+
+					//测试完打开
+					$.ajax({
+						type: "post",
+						dataType: "json",
+						url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/NewOrderServlet",
+						data: data1,
+						success: function (data) {
+							console.log(data); //测试
+							orderId = data.result[0];
+							if (data.errorCode == 200) {
+								alert(data.result[1]);
+								$("#payTitle").html(title);
+								$("#payTravelDate").html(date);
+								$("#payPrice").html(page2Total);
+								//guest信息
+								for (var i = 0; i < guests.length; i++) {
+									/**
+									 * json在js里面是对象不是字符串，所以guests[i].name在js输出未undefine。
+									 * 需要转成json再输出字段  $.parseJSON(guests[i]).name
+									 */
+									console.log("name" + i + "：" + $.parseJSON(guests[i]).name); //测试
+									console.log("identity" + i + "：" + $.parseJSON(guests[i]).identity); //测试
+									console.log("phoneNumber" + i + "：" + $.parseJSON(guests[i]).phoneNumber); //测试
+									var str = "<ul><li>姓名：" +
+											$.parseJSON(guests[i]).name +
+											"</li><li>电话：" +
+											$.parseJSON(guests[i]).phoneNumber +
+											"</li><li>身份证：" +
+											$.parseJSON(guests[i]).identity +
+											"</li></ul>";
+									$("#payGuestInfo").append(str);
+								}
+
+								alert("请确认订单信息！");
+								$("#fill").hide();
+								$("#css").attr('href', 'css/checkPage.css');
+								$("#check").show();
+
+							}
+						},
+						error: function () {
+							alert("err fun()");
+						}
+					});
+
+				});
+				//换位置
+
+				document.getElementById("doPay").addEventListener('click', function () {
+					//付款功能，发送价格，订单号
+					var data1 = {};
+					data1.orderID = orderId;
+					data1.price = page2Total;
+					$.ajax({
+						//发送价格，订单号
+						url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/PayServlet",
+						type: "post",
+						dataType: "json",
+						data: data1,
+						success: function (data) {
+							if (data.errorCode == 200) {
+								alert(data.result);
+								location.href = "order.html";
+							} else {
+							alert("errorCode != 200");
+							}
+						},
+						error: function () {
+							alert("err fun()");
+						}
+					});
+					//servlet 更新订单状态
+
+				});
+				document.getElementById("doCancle").addEventListener('click', function () {
+					if (confirm("支付未完成，是否返回？")) {
+						location.href = "travelList.html";
+					}
+				});
+			})
+
+		</script>
+
+
+		<!------------------------------------------------------------------------------------------------>
+		<!------------------------------------------------------------------------------------------------>
+		<!------------------------------------------------------------------------------------------------>
+		<!------------------------------------------------------------------------------------------------>
+		<!------------------------------------------------------------------------------------------------>
+		<!------------------------------------------------------------------------------------------------>
+
+	</head>
+
+	<body>
+	<!--date.html-->
+	<div id="date" style="display: block">
+		<!--头部搜索开始-->
+		<div id="header1">
+			<header class="head-top">
+				<div class="go-back">
+					<a href="javascript:;" onclick="javascript :history.go(-1)">
+						<i class="goback-icon"></i>
+					</a>
+				</div>
+				<div class="title">
+					<h3>选择日期和人数</h3>
+				</div>
+				<div class="register">
+					<a href="#">起价说明</a>
+				</div>
+			</header>
+		</div>
+
+		<!--内容区域开始-->
+		<div id="wrapper1">
+			<div id="scroller1">
+				<div id="demo" placeholder="Please Select..."></div>
+
+				<section class="set-time clearfix">
+					<div class="select-num">
+						<div class="man-box clearfix">
+							<span>选择出行日期</span>
+							<div class="man-box-num"  id="dateSelect">
+								<input style="width: 100px" disabled="disabled" type="text" id="dateInput">
+							</div>
+						</div>
+
+						<div class="man-box clearfix">
+							<span>成人</span>
+							<div class="man-box-price">¥<strong id="pricePer"><!--3159--></strong>/人</div>
+							<div class="man-box-num">
+								<span id="minusAdult" class="change-box-left jian">-</span>
+								<input disabled class="shu" type="tel" name="" id="numAdult" value="0">
+								<span id="plusAdult" class="change-box-right jia">+</span>
+							</div>
+						</div>
+
+						<div class="man-box clearfix">
+							<span>儿童</span>
+							<div class="man-box-num">
+								<span id="minusKid" class="change-box-left jian">-</span>
+								<input disabled="disabled" class="shu" type="tel" name="" id="numKid" value="0">
+								<span id="plusKid" class="change-box-right jia">+</span>
+							</div>
+						</div>
+
+						<div class="man-box infant-box clearfix">
+							<i></i>
+							<span>携带幼儿</span>
+							<em>0~2岁</em>
+						</div>
+
+						<div class="man-box set-tip clearfix">
+							<em>&nbsp;最少1人起订，年龄2—12周岁，不占床，不含早，只含当地的正餐半餐、车位以及导服，其他需要自理。成人+儿童最多支持9人，</em>
+							<i>&nbsp;*以上价格均为起价</i>
+						</div>
+
+					</div>
+				</section>
+
+			</div>
+		</div>
+		<!--底部开始-->
+		<div id="footer1">
+			<div class="detail-sum">
+				<span>总额：¥<i id="total">6318</i></span>
+				<a href="#">明细></a>
+			</div>
+			<div class="detail-next" id="select">
+				<a id="nextStep1" href="javascript:;">
+					<span>下一步</span>
+					<s>选择资源</s>
+
+				</a>
+
+			</div>
+		</div>
+	</div>
+	<!--resource.html-->
+	<div id="resource" style="display: none">
+		<!--头部搜索开始-->
+		<div id="header2">
+			<header class="head-top">
+				<div class="go-back">
+					<a id="page2back" href="javascript:;">
+						<i class="goback-icon"></i>
+					</a>
+				</div>
+				<div class="title">
+					<h3>选择资源</h3>
+				</div>
+				<div></div>
+			</header>
+		</div>
+
+		<!--内容区域开始-->
+		<div id="wrapper2">
+			<div id="scroller2">
+
+				<div class="resource-box">
+					<!-- 总额明细 -->
+					<div class="resource-detail clearfix">
+						<div class="detail-l">
+							<h2 id="title2">三亚5日4晚半自助游套餐</h2>
+							<p>出发日期：<span id="date2">2017-9-10</span></p>
+							<p>出行人数：<span id="adult2">3 </span>成人<span id="kid2">3 </span>儿童</p>
+						</div>
+						<div class="detail-r">
+							<div class="detail-r-num"><b>¥</b><strong id="total2">6512</strong></div>
+							<div class="detail-all"> 总额明细> </div>
+						</div>
+					</div>
+
+					<!-- 飞机票 -->
+					<!--
+					<div class="resource-hangban">
+						<div class="resource-reelect">
+							<div class="begin-place">
+								<h2>三亚</h2>
+								<p>首都国际机场</p>
+								<p>6:30</p>
+							</div>
+							<div class="ariplane clearfix"></div>
+							<div class="end-place">
+								<h2>北京</h2>
+								<p>凤凰国际机场</p>
+								<p>10:40</p>
+							</div>
+						</div>
+						<div class="resource-content">
+							<ul class="clearfix">
+								<li>
+									<span>日期</span>
+									<p>2017-9-10 <b>星期</b>五</p>
+								</li>
+								<li>
+									<span>时间</span>
+									<p>6:30<i>am</i></p>
+								</li>
+								<li>
+									<span>航班</span>
+									<p>中国国航CA1353</p>
+								</li>
+								<li>
+									<span>舱位</span>
+									<p>经济舱</p>
+								</li>
+								<li>
+									<span>飞行时长</span>
+									<p>约<b>5</b>小时<b>20</b>分钟</p>
+								</li>
+								<li>
+									<span>出行人数</span>
+									<p><b>3</b>人</p>
+								</li>
+								<li>
+									<a href="#">改签/预订限制></a>
+								</li>
+								<li>
+									<a href="#">重选航班></a>
+								</li>
+							</ul>
+						</div>
+					</div>
+
+					<div class="resource-hangban">
+						<div class="resource-reelect">
+							<div class="begin-place">
+								<h2>北京</h2>
+								<p>凤凰国际机场</p>
+								<p>6:30</p>
+							</div>
+							<div class="ariplane"></div>
+							<div class="end-place">
+								<h2>三亚</h2>
+								<p>首都国际机场</p>
+								<p>10:40</p>
+							</div>
+						</div>
+						<div class="resource-content">
+							<ul class="clearfix">
+								<li>
+									<span>日期</span>
+									<p>2017-9-10 <b>星期</b>六</p>
+								</li>
+								<li>
+									<span>时间</span>
+									<p>7:30<i>am</i></p>
+								</li>
+								<li>
+									<span>航班</span>
+									<p>大新华航空CN7180</p>
+								</li>
+								<li>
+									<span>舱位</span>
+									<p>经济舱</p>
+								</li>
+								<li>
+									<span>飞行时长</span>
+									<p>约<b>5</b>小时<b>30</b>分钟</p>
+								</li>
+								<li>
+									<span>出行人数</span>
+									<p><b>2</b>人</p>
+								</li>
+								<li>
+									<a href="#">改签/预订限制></a>
+								</li>
+								<li>
+									<a href="#">重选航班></a>
+								</li>
+							</ul>
+						</div>
+					</div>
+					-->
+
+					<!-- 套餐券 -->
+					<!--
+					<div class="resource-quan">
+						<div class="quan-01">
+							<div class="quan-01-con">
+								<p>2成人起订<br>每单立减800元！</p>
+								<div class="man-box-num">
+									<span class="change-box-left jian">-</span>
+									<input class="shu" type="tel" name="" id="" value="0">
+									<span class="change-box-right jia">+</span>
+								</div>
+							</div>
+						</div>
+						<div class="quan-01 quan-02">
+							<div class="quan-01-con">
+								<p>+0元/人 免费升级<br>价值168元团餐！</p>
+								<div class="man-box-num">
+									<span class="change-box-left jian">-</span>
+									<input class="shu" type="tel" name="" id="" value="3">
+									<span class="change-box-right jia">+</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					-->
+
+					<!-- 额外费用账单 -->
+					<div class="resource-bill">
+						<div class="bill-top"> 附加额外费用账单 </div>
+						<!-- 单房差 -->
+						<div class="bill-danfangcha">
+							<div class="danfangcha-l">
+								<h3>单房差</h3>
+								<div class="man-box-num">
+									<span id="minus1" class="change-box-left jian">-</span>
+									<input disabled class="shu" type="tel" name="" id="danfangcha" value="1">
+									<span id="add1" class="change-box-right jia">+</span>
+								</div>
+							</div>
+							<div class="danfangcha-r">
+								<div class="bill-price">
+									<b>¥</b>
+									<strong id="price1">620</strong> /人
+								</div>
+							</div>
+						</div>
+						<!-- 门票 -->
+						<div class="bill-danfangcha bill-ticket">
+							<div class="bill-ticket-t">
+								<div class="danfangcha-l">
+									<h3>超值换购水上乐园成人门票</h3>
+									<div class="man-box-num">
+										<span id="minus2" class="change-box-left jian">-</span>
+										<input disabled class="shu" type="tel" name="" id="shuishangleyuan" value="1">
+										<span id="add2" class="change-box-right jia">+</span>
+									</div>
+								</div>
+								<div class="danfangcha-r">
+									<div class="bill-price">
+										<b>¥</b>
+										<strong>50</strong> /人
+									</div>
+								</div>
+							</div>
+							<div class="bill-ticket-b">
+								<div class="danfangcha-l">
+									<h3>超值换购天涯海角门票</h3>
+									<div class="man-box-num">
+										<span id="minus3" class="change-box-left jian">-</span>
+										<input disabled class="shu" type="tel" name="" id="tianyahaijiao" value="1">
+										<span id="add3" class="change-box-right jia">+</span>
+									</div>
+								</div>
+								<div class="danfangcha-r">
+									<div class="bill-price">
+										<b>¥</b>
+										<strong>36</strong> /人
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- 意外保险 -->
+						<div class="bill-insurance">
+							<div class="bill-one">
+								<h3>意外保险</h3>
+								<p>&nbsp;<span></span>保险价格均为参考价，最终会以预订人真实年龄重新计算。</p>
+							</div>
+							<div class="bill-two clearfix">
+								<i></i>
+								<p>平安i旅行境内长线保险<br>经典型 最高赔偿3000元<span><b>¥</b><strong>120</strong>&nbsp;2份</span></p>
+								<p>请您付款后24小时内提供出行人证件信息，否则将自动为您退订此保险。</p>
+							</div>
+							<div class="bill-two bill-three clearfix">
+								<i></i>
+								<p>平安i旅行境内长线保险<br> 尊贵型 含航意险140万元<span><b>¥</b><strong>80</strong>&nbsp;2份</span></p>
+							</div>
+							<p class="clearfix">
+								<a href="#">重选保险></a>
+							</p>
+
+						</div>
+
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<!--底部开始-->
+		<div id="footer2">
+			<div id="nextStep2" class="detail-next">
+				<span>下一步，填写订单</span>
+			</div>
+		</div>
+
+	</div>
+	<!--fill.html-->
+	<div id="fill"  style="display: none">
+		<!--头部搜索开始-->
+		<div id="header">
+			<header class="head-top">
+				<div class="go-back">
+					<a id="page3back" href="javascript:;">
+						<i class="goback-icon"></i>
+					</a>
+				</div>
+				<div class="title">
+					<h3>订单填写</h3>
+				</div>
+				<div></div>
+			</header>
+		</div>
+
+		<!--内容区域开始-->
+		<div id="wrapper">
+			<div id="scroller">
+				<div class="fill-box">
+					<!-- 预定限制 -->
+					<div class="fill-restrict">
+						<h3>三亚5日4晚半自助游套餐</h3>
+						<p>出发日期：<span id="date3">2017-9-10</span></p>
+						<p>出行人数：<span id="adult">3 </span>成人
+							<span id="kid">3 </span>儿童
+							<a href="#">预定限制></a>
+						</p>
+					</div>
+					<!-- 选择出行人 -->
+					<!--
+					 <div class="fill-select clearfix">
+						<div class="fill-photo"></div>
+						<div class="fill-txt">
+							<div class="tit">
+								<h2>去选择出行人</h2><span>></span></div>
+							<p>为了您顺利出行</p>
+							<p>请务必保证填写项与出游所持证件一致!</p>
+						</div>
+					</div>
+					 -->
+
+					<!-- 更换出行人员 -->
+					<div id="info"></div>
+					<!--
+					<div id="guestInfo" class="fill-select fill-change">
+
+						<div class="fill-old">
+							<b>成</b>
+							<h2>苏打苏塔</h2>
+							<span>></span>
+						</div>
+						<div class="fill-old fill-child">
+							<b>童</b>
+							<h2>苏大大</h2>
+							<span>></span>
+						</div>
+
+						<div>
+							<p>为了您顺利出行 <br> 请务必保证填写项与出游所持证件一致!
+							</p>
+							<p>
+								<a href="#">更换出行人员></a>
+							</p>
+						</div>
+					</div>
+					-->
+
+
+					<!-- 联系人信息 -->
+					<!--
+					 <div class="fill-select fill-message">
+						<div class="fill-photo"></div>
+						<div class="fill-txt">
+							<span class="fill-book"></span>
+							<div class="tit">
+								<p>联系人信息</p>
+							</div>
+							<p>请填写联系人姓名</p>
+							<p class="tit-bottom">请填写手机号码<span>134****3456</span></p>
+						</div>
+					</div>
+					 -->
+
+					<!-- 优惠券 -->
+					<!--
+					<div class="fill-discount">
+						<p>1张券可用<span>></span></p>
+					</div>
+					-->
+					<!-- 发票 -->
+					<!--
+					<div class="fill-select fill-message fill-debit">
+						<div class="fill-bill">
+							<div class="bill-photo"></div>
+							<div class="bill-txt">
+								<p>发票</p>
+								<p>不需要发票</p>
+							</div>
+							<span>></span>
+						</div>
+						<div class="fill-bill fill-ask">
+							<div class="bill-photo"></div>
+							<div class="bill-txt">
+								<p>特殊要求</p>
+								<p>无</p>
+							</div>
+							<span>></span>
+						</div>
+					</div>
+					-->
+					<!-- 注意事项 -->
+					<div class="fill-notice">
+						<p><b></b>航班价格变动频繁，<br> &nbsp;&nbsp;&nbsp;&nbsp;请在提交订单后25分钟内完成支付。
+						</p>
+						<p><b></b>点击下一步表示已阅读并同意<span>预订须知和重要条款</span>。</p>
+						<p><b></b>为支持绿色环保，默认电子合同，若需要签署纸质合<br>&nbsp;&nbsp;&nbsp;&nbsp;同请致电客服。</p>
+					</div>
+
+				</div>
+
+			</div>
+		</div>
+
+		<!--底部开始-->
+		<div id="footer">
+			<div class="detail-sum">
+				<span><i>¥</i><span id="total3">6512</span></span>
+				<a href="#">明细></a>
+			</div>
+			<div class="detail-next">
+				<span id="pay">去支付</span>
+			</div>
+		</div>
+	</div>
+
+	<!--确认订单信息-->
+	<div id="check" style="display: none; background-color: white; font-size: larger">
+		<p id="payTitle"></p>
+		<p>出发日期：<span id="payTravelDate"></span></p>
+		<div  id="payGuestInfo">
+			出行人信息：
+
+		</div>
+		<p>金额：<span id="payPrice"></span></p>
+		<p>
+			<button id="doPay">确认支付</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<button id="doCancle">取消支付</button>
+		</p>
+	</div>
+	</body>
+
+</html>
+<script src="lib/flexible.js"></script>
+<script src="lib/iscroll.js"></script>
+<!-- jQuery Include -->
+
+<script src="lib/mobiscroll/js/jquery-1.9.1.js"></script>
+
+<script src="lib/mobiscroll/js/mobiscroll.custom-2.17.1.min.js"></script>
+
+
+<!--
+<script src="js/date.js"></script>
+<script src="lib/mobiscroll/js/jquery-1.11.1.min.js"></script>
+
+<script src="lib/mobiscroll/js/mobiscroll.custom-2.17.1.min.js"></script>
+
+-->

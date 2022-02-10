@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<!-- 是否启动webapp功能，会删除默认的苹果工具栏和菜单栏。 -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<!-- 这个主要是根据实际的页面设计的主体色为搭配来进行设置。 -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<!-- 忽略页面中的数字识别为电话号码,email识别 -->
+		<meta name="format-detection" content="telephone=no, email=no" />
+		<!-- 启用360浏览器的极速模式(webkit) -->
+		<meta name="renderer" content="webkit">
+		<!-- 避免IE使用兼容模式 -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<!-- 针对手持设备优化，主要是针对一些老的不识别viewport的浏览器，比如黑莓 -->
+		<meta name="HandheldFriendly" content="true">
+		<!-- 微软的老式浏览器 -->
+		<meta name="MobileOptimized" content="320">
+		<!-- uc强制竖屏 -->
+		<meta name="screen-orientation" content="portrait">
+		<!-- QQ强制竖屏 -->
+		<meta name="x5-orientation" content="portrait">
+		<!-- UC强制全屏 -->
+		<meta name="full-screen" content="yes">
+		<!-- QQ强制全屏 -->
+		<meta name="x5-fullscreen" content="true">
+		<!-- UC应用模式 -->
+		<meta name="browsermode" content="application">
+		<!-- QQ应用模式 -->
+		<meta name="x5-page-mode" content="app">
+		<title>i旅行-订单</title>
+
+		<link rel="stylesheet" href="css/reset.css">
+		<link rel="stylesheet" href="css/order.css">
+
+	</head>
+
+	<script type="text/javascript" src="js/zepto/zepto.js"></script>
+	<script type="text/javascript" src="js/zepto/event.js"></script>
+	<script type="text/javascript" src="js/zepto/ajax.js"></script>
+	<script type="text/javascript" src="js/zepto/ie.js"></script>
+	<script type="text/javascript" src="js/zepto/touch.js"></script>
+	<script type="text/javascript" src="js/LocationIP.js"></script>
+	<script>
+		//获取全部订单信息
+		$(function () {
+			$.ajax({
+				"url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/AllOrdersServlet",
+				"dataType": "json",
+				"type": "post",
+				"success": function (data) {
+					//alert(data.name); //测试测测测测测
+					//alert("Ajax回调函数-" + data); //测试
+					if (data.errorCode == 200) {
+						alert(data.result);
+						window.location.href = "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/login.html";
+					} else {
+						console.log(data.result); //测试
+
+						var routines = data.result[1];
+						var orders = data.result[0];
+						for (var i = 0; i < routines.length; i++) {
+							var str;
+							//全部完成的订单
+							if (orders[i].isCommented == true) {
+								str = "<li class=\"order-item clearfix\"><div class=\"order-des\"><i class=\"order-icon\"></i><div class=\"order-tit\"><h3>" +
+										routines[i].title +
+										"</h3><span>" +
+										orders[i].travelDate +
+										"</span></div><div class=\"order-key\"><span class=\"order-price\">¥" +
+										orders[i].payment +
+										"</span><em class=\"order-status\">" +
+										"订单完成" +
+										"</em></div></div><div class=\"order-btn\"></div></li>";
+								//待评论订单
+							} else if (orders[i].isTraveled && !orders[i].isCommented) {
+								str = "<li class=\"order-item clearfix\"><div class=\"order-des\"><i class=\"order-icon\"></i><div class=\"order-tit\"><h3>" +
+										routines[i].title +
+										"</h3><span>" +
+										orders[i].travelDate +
+										"</span></div><div class=\"order-key\"><span class=\"order-price\">¥" +
+										orders[i].payment +
+										"</span><em class=\"order-status\">" +
+										"待评价" +
+										"</em></div></div><div class=\"order-btn\"><a href=\"" +
+										"Comment.html?routineID=" + routines[i].id + "?title=" + routines[i].title +
+										"\">" +
+										"去评价" +
+										"</a></div></li>";
+								//待出行订单
+							} else if (!orders[i].isTraveled && orders[i].isPaied) {
+								str = "<li class=\"order-item clearfix\"><div class=\"order-des\"><i class=\"order-icon\"></i><div class=\"order-tit\"><h3>" +
+										routines[i].title +
+										"</h3><span>" +
+										orders[i].travelDate +
+										"</span></div><div class=\"order-key\"><span class=\"order-price\">¥" +
+										orders[i].payment +
+										"</span><em class=\"order-status\">" +
+										"未出行" +
+										"</em></div></div><div class=\"order-btn\"><a onclick='travel(" +
+										orders[i].orderID +
+										")' href=\"#\">" +
+										"完成出行" +
+										"</a><a href=\"" +
+										routines[i].href  + '?routineID=' + routines[i].id +
+										"\">" +
+										"查看行程" +
+										"</a><a href=\"index.html\">" +
+										"继续预订" +
+										"</a></div></li>";
+								//待付款订单
+							} else if (!orders[i].isPaied) {
+								str = "<li class=\"order-item clearfix\"><div class=\"order-des\"><i class=\"order-icon\"></i><div class=\"order-tit\"><h3>" +
+										routines[i].title +
+										"</h3><span>" +
+										orders[i].travelDate +
+										"</span></div><div class=\"order-key\"><span class=\"order-price\">¥" +
+										orders[i].payment +
+										"</span><em class=\"order-status\">" +
+										"未付款" +
+										"</em></div></div><div class=\"order-btn\"><a onclick='cancleOrder(" +
+										orders[i].orderID +
+										")' id='cancleBtn" + i +
+										"' href=\"javascript:;\">" +
+										"取消" +
+										"</a><a href=\"" +
+										routines[i].href + '?routineID=' + routines[i].id +
+										"\">" +
+										"查看行程" +
+										"</a><a onclick='pay(" +
+										orders[i].orderID +
+										")' href=\"javascript:;\">" +
+										"去支付" +
+										"</a></div></li>";
+
+							}
+							$(".order-list").append(str);
+							if (!orders[i].isPaied) {
+								//document.getElementById("cancleBtn" + 1).addEventListener('click', cancleOrder[orders[i].orderID]);
+								/*
+								var num = orders[i].orderID;
+								//闭包处理
+								$("#cancleBtn" + i).tap((function (id) {
+									console.log(id);
+									cancleOrder(id);
+								})(num));
+								*/
+							}
+						}
+					}
+				}
+			});
+		});
+
+		function cancleOrder(orderID) {
+			if (confirm("是否删除该订单")) {
+				console.log("orderID:" + orderID); //测试
+				/**
+				 * ajax发送的data是变量，需要用以下容器的方式。
+				 * 后端servlet取值用req.getParameter("id")
+				 * @type {{}}
+				 */
+				var data = {};
+				data['orderID'] = orderID;
+				//console.log("data:" + data.id); //测试
+
+				$.ajax({
+					url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CancleOrderServlet",
+					type: "post",
+					data: data,
+					dataType: "json",
+					success: function (data) {
+						if (data.errorCode === 200) {
+							alert(data.result);
+							location.reload();
+						}
+					}
+				});
+			}
+		}
+		
+		function pay(orderID) {
+			console.log("pay for id:" + orderID); //测试
+			if (confirm("是否确认支付？")) {
+				var data = {};
+				data['orderID'] = orderID;
+				$.ajax({
+					url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/PayServlet",
+					type: "post",
+					data: data,
+					dataType: "json",
+					success: function (data) {
+						if (data.errorCode === 200) {
+							alert(data.result);
+							location.reload();
+						}
+					},
+					error: function () {
+						alert("error fun()");
+					}
+				});
+			}
+		}
+
+		function travel(orderID) {
+			if (confirm("是否出行结束？")) {
+				var data = {};
+				data['orderID'] = orderID;
+				$.ajax({
+					url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/TravelServlet",
+					type: "post",
+					data: data,
+					dataType: "json",
+					success: function (data) {
+						if (data.errorCode === 200) {
+							alert(data.result);
+							location.reload();
+						}
+					},
+					error: function () {
+						alert("error fun()");
+					}
+				});
+			}
+		}
+	</script>
+
+	<body>
+		<!--头部搜索开始-->
+		<div id="header">
+			<header class="head-top">
+				<div class="go-back">
+					<a href="myinfo.html">
+						<i class="goback-icon"></i>
+					</a>
+				</div>
+				<div class="title">
+					<h3>全部订单</h3>
+				</div>
+				<div class="register">
+					<a href="#">手机查单</a>
+				</div>
+			</header>
+		</div>
+
+		<!--内容区域开始-->
+		<div id="wrapper">
+			<div id="scroller">
+				<!-- 订单开始 -->
+				<section class="order">
+					<ul class="order-list">
+
+					</ul>
+
+					<!-- 提示信息 -->
+					<section class="order-tip">
+						<span>
+					已显示全部订单
+				</span>
+						<a href="#" class="order-look">查看一年前订单 > </a>
+					</section>
+
+				</section>
+
+			</div>
+		</div>
+		<!--底部开始-->
+		<div id="footer">
+			<a href="#" class="ord-sel active ">
+				<i class="active2"></i> 筛选
+			</a>
+			<a href="#" class="ord-pre">
+				<i></i> 预定时间
+			</a>
+			<a href="#" class="ord-eff">
+				有效订单
+				<i></i>
+			</a>
+		</div>
+
+	</body>
+
+</html>
+<script src="lib/flexible.js"></script>
+<script src="lib/iscroll.js"></script>
+<!--
+
+<script src="js/order.js"></script>
+-->

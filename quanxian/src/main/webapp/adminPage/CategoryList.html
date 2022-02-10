@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>旅游分类</title>
+
+    <link rel="stylesheet" href="../bootstrap-3.3.7-dist/css/bootstrap.min.css">
+    <style>
+        #table input{
+            border: none;
+            background-color: transparent;
+            width: 200px;
+            height: 150px;
+        }
+
+        /*修改popover样式*/
+        .popover{
+            background: beige;
+        }
+
+        /*修改popover箭头的颜色*/
+        .popover.bottom>.arrow:after {
+            border-bottom-color: beige;
+        }
+    </style>
+
+    <script type="text/javascript" src="../js/LocationIP.js"></script>
+    <script type="text/javascript" src="../js/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="../bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+    <script>
+        //分页信息
+        var currPage = 1;
+        var totalPage = -1;
+        var numPerPage = 4;
+        var totalResults = -1;
+        var routines;
+        var categoryList;
+
+        $(function () {
+            sendAjax();
+
+            $("#inputBtn").change(function () {
+                $("#picture").attr("src",URL.createObjectURL($(this)[0].files[0]));
+            });
+        });
+
+        //删除一条分类
+        function deleteCategory(pos) {
+            console.log("删除位置：" + pos);
+            var categoryID = categoryList[pos].categoryID;
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                dataType: "json",
+                type: "post",
+                data: {
+                    'categoryID': categoryID,
+                    'method': "deleteCategory"
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        alert("操作成功!");
+                        location.reload();
+                    }
+                },
+                error: function () {
+                    alert("deleteCategory err fun()");
+                }
+            });
+        }
+
+        //移除category的一条routine
+        function removeRoutine(routineID, categoryID, pos) {
+            console.log("categoryID:" + categoryID + "  routineID:" + routineID);
+            var categoryroutine = {
+                categoryID: categoryID,
+                routineID: routineID
+            };
+            var dataJson = JSON.stringify(categoryroutine);
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                dataType: "json",
+                type: "post",
+                data: {
+                    'dataJson': dataJson,
+                    'method': "removeCategoeyRoutine"
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        alert("操作成功！");
+                        //editRoutine(pos);
+
+                    }
+                },
+                error: function () {
+                    alert("remove err fun()");
+                }
+            });
+        }
+
+        //category添加一条routine
+        function addRoutine(categoryID, pos) {
+            var routineID = $("#addRoutineInput" + categoryID).val();
+            console.log("categoryID:" + categoryID + "  routineID:" + routineID);
+            var categoryroutine = {
+                categoryID: categoryID,
+                routineID: routineID
+            };
+            var dataJson = JSON.stringify(categoryroutine);
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                dataType: "json",
+                type: "post",
+                data: {
+                    'dataJson': dataJson,
+                    'method': "addCategoeyRoutine"
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        alert("操作成功！");
+                        //editRoutine(pos);
+                    }
+                },
+                error: function () {
+                    alert("add err fun()");
+                }
+            });
+        }
+
+        //编辑类别包含的路线
+        function editRoutine(pos) {
+            $('div[id^=editDiv]').collapse('hide');
+            $('#editDiv' + pos).collapse('show');
+            var categoryID = categoryList[pos].categoryID;
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                dataType: "json",
+                type: "post",
+                data: {
+                    'categoryID': categoryID,
+                    'method': "searchRoutine"
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        console.log(data);
+                        routines = data.result;
+                        console.log("categoryID:" + categoryID);
+                        $("#editRoutineTable" + pos).html("");
+                        for (var i = 0; i < routines.length; i++) {
+                            var str = "<tr><td>" +
+                                routines[i].id +
+                                "</td><td>" +
+                                routines[i].title +
+                                "</td><td>" +
+                                "<span style='color: #de3226' class='glyphicon glyphicon-minus' onclick='removeRoutine(" +
+                                routines[i].id +
+                                ", " +
+                                categoryID +
+                                ", " +
+                                pos +
+                                ")'></span>" +
+                                "</td></tr>";
+                            $("#editRoutineTable" + pos).append(str);
+                        }
+                        $("#editRoutineTable" + pos).append("<tr><td class='glyphicon glyphicon-plus'></td><td><input id='addRoutineInput" +
+                            categoryID +
+                            "' style='height: 20px; width: 100px' placeholder='要添加的线路ID'></td><td><button onclick='addRoutine(" +
+                            categoryID +
+                            ", " +
+                            pos +
+                            ")' class='glyphicon glyphicon-ok'></button></td></tr>");
+                    }
+                },
+                error: function () {
+                    alert("deleteCategory err fun()");
+                }
+            });
+        }
+
+        //页码Btn
+        function pageButton(pos) {
+            currPage = pos;
+            sendAjax();
+            console.log('页码：' + pos);//测试
+        }
+
+        //图片替换传值
+        function sendPostion(pos) {
+            $("#postionOfPic").val(pos);
+        }
+
+        //提交修改Btn
+        function categoryUpdate(pos) {
+            categoryList[pos].name = $("#name" + pos).val();
+            categoryList[pos].type = $("#type" + pos).val();
+            var CategoryJSON = JSON.stringify(categoryList[pos]);
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                dataType: "json",
+                type: "post",
+                data: {
+                    'CategoryJSON': CategoryJSON,
+                    'method': "updateOne"
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        alert("操作成功!");
+                        location.reload();
+                    }
+                },
+                error: function () {
+                    alert("updateCategory err fun()");
+                }
+            });
+        }
+
+        //模态框提交按钮
+        function picAlter() {
+            var pos = $("#postionOfPic").val();
+            var formData = new FormData();
+            formData.append("file", $("#inputBtn")[0].files[0]);
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ImgUploadServlet?method=CategoryPic",
+                data: formData,
+                processData : false,//用于对data参数进行序列化处理 这里必须false
+                contentType : false,//必须
+                dataType: "json",
+                type: "post",
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        categoryList[pos].picture = $("#inputBtn")[0].files[0].name//上传文件名称 file input的id inputfileFImg
+
+                        var CategoryJSON = JSON.stringify(categoryList[pos]);
+                        //ajax updateOne
+                        $.ajax({
+                            url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                            dataType: "json",
+                            type: "post",
+                            data: {
+                                'CategoryJSON': CategoryJSON,
+                                'method': "updateOne"
+                            },
+                            success: function (data) {
+                                if (data.errorCode == 200) {
+                                    alert("操作成功!");
+                                    location.reload();
+                                }
+                            },
+                            error: function () {
+                                alert("updateCategory err fun()");
+                            }
+                        });
+                    }
+                },
+                error: function () {
+                    alert("uploadPic err fun()");
+                }
+            });
+        }
+        
+        //新增category
+        function insertNewCategory() {
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                dataType: "json",
+                type: "post",
+                data: {
+                    'method': "insertBlankCategory"
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        alert("操作成功!");
+                        pageButton(totalPage);
+                    }
+                },
+                error: function () {
+                    alert("updateCategory err fun()");
+                }
+            });
+        }
+
+        //发Ajax获取内容
+        function sendAjax() {
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/CategoryListServlet",
+                dataType: "json",
+                type: "post",
+                data: {
+                    'currPage': currPage,
+                    'totalPage': totalPage,
+                    'numPerPage': numPerPage,
+                    'totalResults': totalResults,
+                    'method': "CategoryList"
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        totalPage = data.result[0];
+                        totalResults = data.result[2];
+                        categoryList = data.result[1];
+
+                        //页码
+                        $("#pageBtn").html("");
+                        for (var i = 1; i < totalPage; i++) {
+                            var str = "<li id='page" +
+                                i +
+                                "'><a onclick='pageButton(" +
+                                i +
+                                ")' href=\"javascript:;\">" +
+                                i +
+                                "</a></li>";
+                            $("#pageBtn").append(str);
+                        }
+                        //修改页码按钮样式
+                        $("#pageBtn li").removeAttr('class');
+                        $("#page" + currPage).attr('class', 'active');
+
+                        //信息
+                        $("#table").html("");
+                        for (var i = 0; i < categoryList.length; i++) {
+                            var str = "<tr>\n" +
+                                "                    <td>\n" +
+                                "                        <input id=\"categoryID" +
+                                i +
+                                "\" disabled value=\"" +
+                                categoryList[i].categoryID +
+                                "\">\n" +
+                                "                    </td>\n" +
+                                "                    <td>\n" +
+                                "                        <input id=\"name" +
+                                i +
+                                "\" value=\"" +
+                                categoryList[i].name +
+                                "\">\n" +
+                                "                    </td>\n" +
+                                "                    <td>\n" +
+                                "                        <input id=\"type" +
+                                i +
+                                "\" value=\"" +
+                                categoryList[i].type +
+                                "\">\n" +
+                                "                    </td>\n" +
+                                "                    <td>\n" +
+                                "                        <div onclick='sendPostion(" +
+                                i +
+                                ")' class=\"popover-options\">\n" +
+                                "                            <img id=\"img" +
+                                i +
+                                "\" data-toggle=\"modal\" data-target=\"#myModal\" src=\"../images/categoryImg/" +
+                                categoryList[i].picture +
+                                "\" class=\"img-thumbnail\" style=\"width: 150px; height: 150px\">\n" +
+                                "                        </div>\n" +
+                                "                    </td>\n" +
+                                "                    <td>\n" +
+                                "                        <p onclick='categoryUpdate(" +
+                                i +
+                                ")' style='color: dodgerblue'>提交修改</p>\n" +
+                                "<input disabled style='height: 30px'>" +
+                                "                        <p onclick=\"deleteCategory(" +
+                                i +
+                                ")\" style=\"color: #de3226\">删除分类</p>\n" +
+                                "                        <input disabled style=\"height: 40px\">\n" +
+                                "                        <p id='show" +
+                                i +
+                                "' onclick='editRoutine(" +
+                                i +
+                                ")' data-toggle=\"collapse\" href=\"#editDiv" +
+                                i +
+                                "\" style=\"color: blue\">查看该分类包含的线路>></p>\n" +
+                                "                        <div  id=\"editDiv" +
+                                i +
+                                "\" class=\"panel panel-default panel-collapse collapse\">\n" +
+                                "                            <div class=\"panel-heading\">\n" +
+                                "                                线路删除 / 添加\n" +
+                                "                            </div>\n" +
+                                "                            <div class=\"panel-body\">\n" +
+                                "                                <table id='editRoutineTable" +
+                                i +
+                                "' class=\"table table-condensed\"><!--append routine--></table>\n" +
+                                "                            </div>\n" +
+                                "                        </div>\n" +
+                                "                    </td>\n" +
+                                "                </tr>";
+                            $("#table").append(str);
+                        }
+                        //append 提交按钮
+                        str = ""
+                        $("#table").append(str);
+                        $("#table").append("<tr><td></td><td></td><td></td><td></td><td>" +
+                            "<button onclick='insertNewCategory()' type=\"button\" class=\"btn btn-info\">+新增分类</button>" +
+                            "</td></tr>");
+                    }
+                },
+                error: function () {
+                    alert("err fun()");
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="col-md-10 col-md-offset-1">
+        <div class="row">
+            <h1 class="text-center">
+                分类信息
+            </h1>
+        </div>
+
+        <!--信息-->
+        <div class="row">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">分类</h3>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>#id</th>
+                            <th>类别名称</th>
+                            <th>出行种类</th>
+                            <th>图片</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody id="table">
+                        <tr>
+                            <td>
+                                <input id="categoryID1" disabled value="1">
+                            </td>
+                            <td>
+                                <input id="name1" value="anna">
+                            </td>
+                            <td>
+                                <input id="type1" value="anna">
+                            </td>
+                            <td>
+                                <div class="popover-options">
+                                    <img id="img1" data-toggle="modal" data-target="#myModal" src="../images/show/testImg.jpg" class="img-thumbnail" style="width: 150px; height: 150px">
+                                </div>
+                            </td>
+                            <td>
+                                <input disabled style="height: 60px">
+                                <p onclick="deleteCategory(1)" style="color: #de3226">删除分类</p>
+                                <input disabled style="height: 40px">
+                                <p data-toggle="collapse" href="#testtest" style="color: blue">查看该分类包含的线路>></p>
+                                <div  id="testtest" class="panel panel-default panel-collapse collapse">
+                                    <div class="panel-heading">
+                                        线路删除 / 添加
+                                    </div>
+                                    <div class="panel-body">
+                                        <p>1</p>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                <input disabled value="1">
+                            </td>
+                            <td>
+                                <input value="anna">
+                            </td>
+                            <td>
+                                <input value="anna">
+                            </td>
+                            <td>
+                                <img data-toggle="modal" data-target="#myModal" src="../images/show/testImg.jpg" class="img-thumbnail" style="width: 150px; height: 150px">
+                            </td>
+                            <td>
+                                <input disabled style="height: 60px">
+                                <p onclick="" style="color: #de3226">删除分类</p>
+                                <input disabled style="height: 40px">
+                                <p data-toggle="collapse" href="#testtest2" style="color: blue">查看该分类包含的线路>></p>
+                                <div  id="testtest2" class="panel panel-default panel-collapse collapse">
+                                    <div class="panel-heading">
+                                        线路删除 / 添加
+                                    </div>
+                                    <div class="panel-body">
+                                        <p>1</p>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                <input disabled value="1">
+                            </td>
+                            <td>
+                                <input value="anna">
+                            </td>
+                            <td>
+                                <input value="anna">
+                            </td>
+                            <td>
+                                <img data-toggle="modal" data-target="#myModal" src="../images/show/testImg.jpg" class="img-thumbnail" style="width: 150px; height: 150px">
+                            </td>
+                            <td>
+                                <input disabled style="height: 60px">
+                                <p onclick="" style="color: #de3226">删除分类</p>
+                                <input disabled style="height: 40px">
+                                <p data-toggle="collapse" href="#testtest3" style="color: blue">查看该分类包含的线路>></p>
+                                <div  id="testtest3" class="panel panel-default panel-collapse collapse">
+                                    <div class="panel-heading">
+                                        线路删除 / 添加
+                                    </div>
+                                    <div class="panel-body">
+                                        <p>1</p>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!--
+        <div class="row" style="margin: 0px">
+
+        </div>-->
+
+        <!-- 模态框1（Modal） -->
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            行程详情展示图片上传
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <h3>图片预览</h3>
+                            <input hidden id="postionOfPic"><!--传值用-->
+                            <div style="height: 305px; width: 610px; overflow: auto; margin-bottom: 10px">
+                                <!--预览图片-->
+                                <img id="picture" src="">
+                            </div>
+                            <input type="file" id="inputBtn">
+                            <p class="help-block">请选择jpg、png格式</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="picAlter()">
+                            提交更改
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal -->
+        </div>
+        <!-- 模态框1（Modal） -->
+
+        <!--页码-->
+        <div class="row" style="margin: 0px">
+            <div class="col-md-3 col-md-offset-5">
+                <ul id="pageBtn" class="pagination">
+                    <!--
+                    <li><a href="javascript:;">&laquo;</a></li>
+                    <li class="active"><a href="javascript:;">1</a></li>
+                    <li class="disabled"><a href="javascript:;">2</a></li>
+                    <li><a href="javascript:;">3</a></li>
+                    <li><a href="javascript:;">4</a></li>
+                    <li><a href="javascript:;">5</a></li>
+                    <li><a href="javascript:;">&raquo;</a></li>
+                    -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<!-- 通过这个配置文件完成mybatis与数据库的连接 -->
+<configuration>
+    <!-- 引入 database.properties 文件-->
+    <!--<properties resource="database.properties"/>-->
+    <!-- 不使用外部配置文件 -->
+
+    <properties resource="database.properties"><!--同时存在，配置文件优先-->
+        <property name="driver" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://127.0.0.1:3306/mybatis"/>
+        <property name="user" value="root"/>
+        <property name="password" value="rootroot"/>
+    </properties>
+
+    <settings>
+        <!-- 配置log4j输出日志信息 -->
+        <setting name="logImpl" value="LOG4J" />
+        <!--自动驼峰对照 表列名为b_id 实体属性名为 bId-->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+
+        <!--懒加载设置-->
+        <!-- 全局性设置懒加载。如果设为‘false'，则所有相关联的都会被初始化加载。 -->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <!-- 当设置为‘true'的时候，懒加载的对象可能被任何懒属性全部加载。否则，每个属性都按需加载。 -->
+        <setting name="aggressiveLazyLoading" value="false"/>
+    </settings>
+    <!-- 配置mybatis的log实现为LOG4J -->
+    <typeAliases><!--取别名-->
+        <typeAlias type="AiLvYou.entity.Client" alias="User"/>
+        <!--AiLvYou.entity包里全部取别名，别名为类名-->
+        <!--package name="AiLvYou.entity"/>-->
+    </typeAliases>
+
+    <environments default="development"><!--default="development"选择环境-->
+        <environment id="development">
+            <!--配置事务管理，采用JDBC的事务管理  -->
+            <transactionManager type="JDBC"></transactionManager>
+            <!-- POOLED:mybatis自带的数据源，JNDI:基于tomcat的数据源 -->
+            <dataSource type="POOLED">
+                <property name="driver" value="${driver}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${user}"/>
+                <property name="password" value="${password}"/>
+                <!--数据库连接池，启动的时候创建8个Connection连接-->
+                <property name="poolMaximumActiveConnections" value="8"/>
+            </dataSource>
+        </environment>
+        <environment id="product">
+            <!--配置事务管理，采用JDBC的事务管理  -->
+            <transactionManager type="JDBC"></transactionManager>
+            <!-- POOLED:mybatis自带的数据源，JNDI:基于tomcat的数据源 -->
+            <dataSource type="POOLED">
+                <property name="driver" value="${driver}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${user}"/>
+                <property name="password" value="${password}"/>
+                <property name="poolMaximumActiveConnections" value="8"/>
+            </dataSource>
+        </environment>
+
+    </environments>
+    <!-- 将mapper文件加入到配置文件中 -->
+    <mappers>
+        <mapper resource="ailvxing/dao/UserDaoMapper.xml"/>
+    </mappers>
+</configuration>

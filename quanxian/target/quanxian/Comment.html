@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- 是否启动webapp功能，会删除默认的苹果工具栏和菜单栏。 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- 这个主要是根据实际的页面设计的主体色为搭配来进行设置。 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <!-- 忽略页面中的数字识别为电话号码,email识别 -->
+    <meta name="format-detection" content="telephone=no, email=no" />
+    <!-- 启用360浏览器的极速模式(webkit) -->
+    <meta name="renderer" content="webkit">
+    <!-- 避免IE使用兼容模式 -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 针对手持设备优化，主要是针对一些老的不识别viewport的浏览器，比如黑莓 -->
+    <meta name="HandheldFriendly" content="true">
+    <!-- 微软的老式浏览器 -->
+    <meta name="MobileOptimized" content="320">
+    <!-- uc强制竖屏 -->
+    <meta name="screen-orientation" content="portrait">
+    <!-- QQ强制竖屏 -->
+    <meta name="x5-orientation" content="portrait">
+    <!-- UC强制全屏 -->
+    <meta name="full-screen" content="yes">
+    <!-- QQ强制全屏 -->
+    <meta name="x5-fullscreen" content="true">
+    <!-- UC应用模式 -->
+    <meta name="browsermode" content="application">
+    <!-- QQ应用模式 -->
+    <meta name="x5-page-mode" content="app">
+    <title>i旅行-浏览历史</title>
+
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/history.css">
+
+</head>
+<script type="text/javascript" src="js/zepto/zepto.js"></script>
+<script type="text/javascript" src="js/zepto/event.js"></script>
+<script type="text/javascript" src="js/zepto/ajax.js"></script>
+<script type="text/javascript" src="js/zepto/ie.js"></script>
+<script type="text/javascript" src="js/zepto/touch.js"></script>
+<script type="text/javascript" src="js/zepto/selector.js"></script>
+<script type="text/javascript" src="js/LocationIP.js"></script>
+<script>
+
+    $(function () {
+        var preUrl = document.referrer;
+        $("#goBack").attr("href", preUrl);
+
+        var href = location.href;
+        var str = href.split("?");
+        console.log(str); //测试
+        var str2 = str[2].split("=");
+        /**
+         * decodeURI(str2[1])将url中%E5%8C%97%E4%BA%AC%E6%B8%B8转换为中文字符
+         */
+        $("#title").html(decodeURI(str2[1]));
+
+    });
+</script>
+
+
+<body>
+<!--头部搜索开始-->
+<div id="header">
+    <header class="head-top">
+        <div class="go-back">
+            <a id="goBack" href="travel.html">
+                <i class="goback-icon"></i>
+            </a>
+        </div>
+        <div class="title">
+            <h3>登录</h3>
+        </div>
+        <div class="register">
+
+        </div>
+    </header>
+</div>
+
+<!--内容区域开始-->
+<div id="wrapper">
+    <div id="scroller">
+        <!--主要内容开始-->
+
+        <section class="main">
+            <p id="title">
+                标题
+            </p>
+            评分：
+            <select id="score">
+                <option value=0>0</option>
+                <option value=1>1</option>
+                <option value=2>2</option>
+                <option value=3>3</option>
+                <option value=4>4</option>
+                <option value=5>5</option>
+            </select><br>
+            评价：
+            <input id="content" type="text"><br>
+            <button id="submitBtn">提交评价</button>
+        </section>
+    </div>
+</div>
+
+<!--底部开始-->
+<div id="footer">
+    <a href="index.html" class="home">
+        <span></span>
+        <p>首页</p>
+    </a>
+    <a href="search.html" class="destination">
+        <span></span>
+        <p>目的地</p>
+    </a>
+    <a href="#" class="history active">
+        <span></span>
+        <p>浏览历史</p>
+    </a>
+    <a href="myinfo.html" class="my">
+        <span></span>
+        <p>个人</p>
+    </a>
+</div>
+
+</body>
+
+</html>
+<script>
+    $("#submitBtn").tap(function () {
+        var score = $("#score").val();
+        console.log("score:" + score); //测试
+        var content = $("#content").val();
+        console.log("content:" + content); //测试
+        var s = location.href;
+        var ss = s.split("?");
+
+        $.ajax({
+            "url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/MakeCommentServlet?" + ss[1],
+            "dataType": "json",
+            data:{
+                score: score,
+                content: content,
+            },
+            "type": "post",
+            "success": function (data) {
+                //alert("Ajax回调函数-" + data); //测试
+                if (data.errorCode == 100) {
+                    alert(data.result);
+                    window.location.href = "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/unComment.html";
+                } else {
+                    alert(data.result);
+                    window.location.href = "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/unComment.html";
+                }
+            }
+        });
+    });
+</script>
+<script src="lib/flexible.js"></script>
+<script src="lib/iscroll.js"></script>
+<script src="js/history.js"></script>

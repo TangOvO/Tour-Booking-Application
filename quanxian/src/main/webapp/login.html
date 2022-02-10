@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<!-- 是否启动webapp功能，会删除默认的苹果工具栏和菜单栏。 -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<!-- 这个主要是根据实际的页面设计的主体色为搭配来进行设置。 -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<!-- 忽略页面中的数字识别为电话号码,email识别 -->
+		<meta name="format-detection" content="telephone=no, email=no" />
+		<!-- 启用360浏览器的极速模式(webkit) -->
+		<meta name="renderer" content="webkit">
+		<!-- 避免IE使用兼容模式 -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<!-- 针对手持设备优化，主要是针对一些老的不识别viewport的浏览器，比如黑莓 -->
+		<meta name="HandheldFriendly" content="true">
+		<!-- 微软的老式浏览器 -->
+		<meta name="MobileOptimized" content="320">
+		<!-- uc强制竖屏 -->
+		<meta name="screen-orientation" content="portrait">
+		<!-- QQ强制竖屏 -->
+		<meta name="x5-orientation" content="portrait">
+		<!-- UC强制全屏 -->
+		<meta name="full-screen" content="yes">
+		<!-- QQ强制全屏 -->
+		<meta name="x5-fullscreen" content="true">
+		<!-- UC应用模式 -->
+		<meta name="browsermode" content="application">
+		<!-- QQ应用模式 -->
+		<meta name="x5-page-mode" content="app">
+		<title>i旅行-登录</title>
+
+		<link rel="stylesheet" href="css/reset.css">
+		<link rel="stylesheet" href="css/login.css">
+
+	</head>
+
+	<body>
+		<!--头部搜索开始-->
+		<div id="header">
+			<header class="head-top">
+				<div class="go-back">
+					<a href="travel.html">
+						<i class="goback-icon"></i>
+					</a>
+				</div>
+				<div class="title">
+					<h3>登录</h3>
+				</div>
+				<div class="register">
+					<a href="register.html">注册</a>
+				</div>
+			</header>
+		</div>
+
+		<!--内容区域开始-->
+		<div id="wrapper">
+			<div id="scroller">
+				<!-- 表单 -->
+				<!-- <form action=""> -->
+
+					<div class="login-bar clearfix">
+						<ul>
+							<li class="inp">
+								<i class="login-name">登录名</i><input id="username" type="text" placeholder="手机号码/用户名/邮箱">
+								<a href="javascript:" class="clear"></a>
+							</li>
+							<li class="inp pw">
+								<i class="login-pw">密码</i>
+								<input id="password" type="password" placeholder="登录密码">
+								<a href="javascript:" class="clear"></a>
+								<a href="javascript:" data-show="1" class="change " style="display: block;"></a>
+							</li>
+
+						</ul>
+
+						<div class="login-btn">
+							<button id="btn" class="submit" type="">登录</button> <!---->
+						</div>
+
+						<div class="login-qes">
+							<a href="#">登录遇到问题?</a>
+							<a href="#">境外手机登录</a>
+						</div>
+
+					</div>
+
+				<!-- </form> -->
+				<!-- 合作伙伴 -->
+				<div class="cooperate">
+					<ul>
+						<li></li>
+						<li></li>
+						<li></li>
+						<li></li>
+						<li></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+	</body>
+
+</html>
+<script type="text/javascript" src="js/zepto/zepto.js"></script>
+<script type="text/javascript" src="js/zepto/event.js"></script>
+<script type="text/javascript" src="js/zepto/ajax.js"></script>
+<script type="text/javascript" src="js/zepto/ie.js"></script>
+<script type="text/javascript" src="js/zepto/touch.js"></script>
+<script type="text/javascript" src="js/zepto/selector.js"></script>
+<script type="text/javascript" src="js/LocationIP.js"></script>
+
+<script src="lib/flexible.js"></script>
+<script src="lib/iscroll.js"></script>
+
+<script src="js/login.js"></script>
+<!--
+<script src="lib/zepto.js"></script>
+<script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+-->
+
+<script>
+	/*
+	$(function () {
+
+			$.ajax({
+				"url": "http://localhost:6060/quanxian_war/LoginServlet",
+				"type": "post",
+				"dataType": "json",
+				"data": {
+					"name": "孙悟空",
+					"pwd": "666"
+				},
+				"success": function (data) {
+					//出不来内容？？？？？？？？？？？？
+					console.log(data.errorCode); //测试
+					alert(data.result + "success"); //测试
+					if (data.errorCode === 100) {
+						alert("登录成功！ajax1");
+						window.location.href = "http://localhost:6060/quanxian_war/index.html";
+					} else {
+						alert("密码或用户名错误！");
+					}
+				},
+				error: function () {
+					console.log("ssssssss");
+				}$("button").tap(function () {
+		//alert("触发点击事件"); //测试
+		if ($("#username").val() == "") {
+			alert("用户名不能为空！name")
+			return false;
+		} else if ($("#password").val() == "") {
+			alert("密码不能为空！pwd");
+			return false;
+		} else {
+			$.ajax({
+				"url": "http://localhost:6060/quanxian_war/LoginServlet",
+				"type": "post",
+				"dataType": "json",
+				"data": {
+					"name": $("#username").val(),
+					"pwd": $("#password").val()
+				},
+				"success": function (data) {
+					//出不来内容？？？？？？？？？？？？
+					console.log(data.errorCode); //测试
+					alert(data.result + "success"); //测试
+					if (data.errorCode === 100) {
+						alert("登录成功！ajax1");
+						window.location.href = "http://localhost:6060/quanxian_war/index.html";
+					} else {
+						alert("密码或用户名错误！");
+					}
+				},
+				error: function () {
+					console.log("ssssssss");
+				}
+			});
+		}
+	});
+			});
+
+	});
+
+	 */
+	$("#btn").tap(function () {
+		//alert("触发点击事件"); //测试
+		if ($("#username").val() == "") {
+			alert("用户名不能为空！name")
+			return false;
+		} else if ($("#password").val() == "") {
+			alert("密码不能为空！pwd");
+			return false;
+		} else {
+			$.ajax({
+				"url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/LoginServlet",
+				"type": "post",
+				"dataType": "json",
+				"data": {
+					"name": $("#username").val(),
+					"pwd": $("#password").val()
+				},
+				"success": function (data) {
+					/**
+					 * success函数不执行
+					 * 原因：form表单冲突，删除form标签后恢复正常
+					 */
+					console.log(data.errorCode); //测试
+					if (data.errorCode === 100) {
+						alert("登录成功！");
+						window.location.href = "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/index.html";
+					} else {
+						alert("密码或用户名错误！");
+					}
+				},
+				error: function () {
+					console.log("err fun()");
+				}
+			});
+		}
+	});
+</script>

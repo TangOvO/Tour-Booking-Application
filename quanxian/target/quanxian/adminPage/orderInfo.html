@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>订单信息</title>
+    <link rel="stylesheet" href="../bootstrap-3.3.7-dist/css/bootstrap.min.css">
+    <style>
+        select{
+            /*清除select的边框样式*/
+            border: none; /*清除select聚焦时候的边框颜色*/
+            outline: none; /*将select的宽高等于div的宽高*/
+            width: 100%;
+            height: 35px;
+            -webkit-appearance: none;/*隐藏select的下拉图标*/
+            padding-left: 20px;/*通过padding-left的值让文字居中*/
+            background-color: transparent;
+            padding-bottom: 10px;
+        }
+
+        td[id^=amount]:hover {
+            cursor:pointer; /*鼠标样式变成手*/
+        }
+
+        #table span:hover{
+            cursor:pointer;
+        }
+
+        table{
+            font-size: 20px;
+            text-align: center;
+        }
+
+        th{
+            text-align:center;/** 设置水平方向居中 */
+            vertical-align:middle/** 设置垂直方向居中 */
+        }
+
+        table input
+        {
+            border: none;
+            background-color: transparent;
+            width: 80px;
+            height: 35px;
+            padding-bottom: 10px;
+        }
+
+        /*修改popover样式*/
+        .popover{
+            background:dimgrey;
+        }
+
+        /*修改popover箭头的颜色*/
+        .popover.right>.arrow:after {
+            border-right-color: dimgrey;
+        }
+        .popover.bottom>.arrow:after {
+            border-bottom-color: dimgrey;
+        }
+    </style>
+
+    <script type="text/javascript" src="../js/LocationIP.js"></script>
+    <script type="text/javascript" src="../js/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="../bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+    <script>
+        var orders;
+        var guests;
+        var routineID;
+
+        $(function () {
+            routineID = window.sessionStorage.getItem("routineID");
+            console.log("sessionStorage routineID:" + routineID); //测试
+            sendAjax("orders", ordersInfo);
+        });
+
+        //传值，传ajax取guest信息
+        function sendOrderID(orderID) {
+            //修改标题orderID
+            $("#orderIDspan").html(orderID);
+            $("#orderIDinput").val(orderID);
+            //传ajax取guest信息
+            sendAjax("guest", guestInfo, orderID, "id");
+        }
+
+        //guest拼串
+        function guestInfo(result) {
+            console.log("guestInfo()");
+            guests = result;
+            $("#table2").html("");
+            for (var i = 0; i < guests.length; i++) {
+                var str = "<tr>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"guestName" +
+                i +
+                "\" value=\"" +
+                    guests[i].name +
+                    "\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"guestIdentity" +
+                i +
+                "\" value=\"" +
+                    guests[i].identity +
+                    "\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"guestStatus" +
+                i +
+                "\" value=\"" +
+                    guests[i].status +
+                    "\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"phoneNumber" +
+                i +
+                "\" value=\"" +
+                    guests[i].phoneNumber +
+                    "\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                <span style=\"color: dodgerblue;\" onclick=\"guestUpdate(" +
+                i +
+                ")\">修改</span>\n" +
+                "                                &nbsp;&nbsp;\n" +
+                "                                <span style=\"color: red\" onclick=\"deleteGuest(" +
+                i +
+                ")\">删除</span>\n" +
+                "                            </td>\n" +
+                "                                        </tr>";
+
+                $("#table2").append(str);
+            }
+        }
+
+        //模态框删除btn
+        function deleteGuest(pos) {
+            console.log("deleteGuest:" + pos);
+            var identity = guests[pos].identity;
+            var orderID = guests[pos].orderID;
+            sendAjax("deleteGuest", guestInfo, identity, "identity", orderID, "orderID");
+        }
+
+        //模态框修改btn
+        function guestUpdate(pos) {
+            console.log("guestUpdate:" + pos);
+            console.log("测试:" + $("#phoneNumber" + pos).val());
+            guests[pos].phoneNumber = $("#phoneNumber" + pos).val();
+            guests[pos].name = $("#guestName" + pos).val();
+            guests[pos].identity = $("#guestIdentity" + pos).val();
+            guests[pos].status = $("#guestStatus" + pos).val();
+            var orderID = guests[pos].orderID;
+/*
+            const p1 = new Promise((resolve,reject) => {
+                sendAjax("updateOneGuest", guestInfo, JSON.stringify(guests[pos]), "guestJSON", false);
+            });
+            */
+
+            function doit(){
+                return new Promise((resolve,reject) => {
+                    sendAjax("updateOneGuest", guestInfo, JSON.stringify(guests[pos]), "guestJSON", false);
+                    resolve('');
+                })
+            }
+
+            doit().then((data) => {
+                console.log("1111111111111111111111111111111111");
+                sendOrderID(orderID);
+
+                //sendOrderID(orderID);
+                //sendAjax("guest", guestInfo, orderID, "id", false);
+            },(err) => {
+                console.log(err);
+        })
+
+
+            /*
+            var pormise = new Promise((resolve, reject)=>{
+                sendAjax("updateOneGuest", guestInfo, JSON.stringify(guests[pos]), "guestJSON", false);
+
+            pormise.then(sendAjax("guest", guestInfo, orderID, "id", false));
+            });
+
+             */
+
+            //sendAjax("updateOneGuest", guestInfo, JSON.stringify(guests[pos]), "guestJSON", false);
+            //异步
+            //sendAjax("guest", guestInfo, orderID, "id", false);
+
+        }
+
+        //模态框确定btn
+        function insertGuest(pos) {
+            console.log("guestUpdate:" + pos);
+            console.log("测试:" + $("#phoneNumber" + pos).val());
+            var guest = {};
+            guest.orderID = $("#orderIDspan").html();
+            guest.phoneNumber = $("#phoneNumber" + pos).val();
+            guest.name = $("#guestName" + pos).val();
+            guest.identity = $("#guestIdentity" + pos).val();
+            guest.status = $("#guestStatus" + pos).val();
+            sendAjax("insertGuest", guestInfo, JSON.stringify(guest), "guestJSON", false);
+        }
+
+        //模态框新增guest
+        function newGuest() {
+            var orderID = $("#orderIDinput").val();
+            var i = guests.length;
+            var str = "<tr>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"guestName" +
+                i +
+                "\" value=\"\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"guestIdentity" +
+                i +
+                "\" value=\"\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"guestStatus" +
+                i +
+                "\" value=\"\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                                <input id=\"phoneNumber" +
+                i +
+                "\" value=\"\">\n" +
+                "                                            </td>\n" +
+                "                                            <td>\n" +
+                "                                <span style=\"color: dodgerblue;\" onclick=\"insertGuest(" +
+                i +
+                ")\">确定</span>\n" +
+                "                                &nbsp;&nbsp;\n" +
+                "                                <span style=\"color: red\"></span>\n" +
+                "                            </td>\n" +
+                "                                        </tr>";
+            $("#table2").append(str);
+        }
+
+        //测试arguements
+        function testArgue() {
+            console.log("length:" + arguments.length);
+            console.log("name:" + arguments[0].name);
+            console.log("arguments:" + arguments[2]);
+            console.log("typeof:" + typeof arguments[0]);
+            console.log("typeof:" + typeof arguments[1]);
+            console.log("typeof:" + typeof arguments[2]);
+        }
+
+        //订单删除btn
+        function deleteOrder(orderID) {
+            console.log("deleteOrder:" + orderID);
+            sendAjax("deleteOrder", ordersInfo, orderID, "id");
+        }
+
+        //订单提交修改btn
+        function orderUpdate(orderID) {
+            console.log("orderUpdate:" + orderID);
+        }
+        
+        //ajax
+        function sendAjax(method, func) {
+            var flag = true;
+            var data = {
+                routineID: routineID,
+                method: method,
+                tempName: ""
+            };
+            if (arguments.length > 2) {
+                data.tempName = arguments[2];
+                data = JSON.parse(JSON.stringify(data).replace(/tempName/g, arguments[3]));
+                console.log("测试：" + JSON.stringify(data)); //测试
+            }
+            if (arguments.length > 4) {
+                data.newData = arguments[4];
+                data = JSON.parse(JSON.stringify(data).replace(/newData/g, arguments[5]));
+                console.log("测试：" + JSON.stringify(data)); //测试
+            }
+            if (arguments[4] != undefined) {
+                flag = false;
+            }
+            $.ajax({
+                "url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/OrderCopeServlet",
+                "dataType": "json",
+                "type": "post",
+                "data": data,
+                "success": function (data) {
+                    console.log("ssssssssssssssss:");
+                    console.log(data);
+                    if (data.errorCode == 200) {
+                        console.log(data);//测试
+                        func(data.result);
+                    } else if (data.errorCode == 300) {
+                        alert("操作成功！");
+                        sendAjax("orders", ordersInfo);
+                    } else if (data.errorCode == 400) {
+                        alert("操作成功！");
+                        //sendAjax("guest", guestInfo, guests[pos].orderID, "id");
+                    } else {
+                        console.log("data.errorCode != 200");
+                    }
+                },
+                error: function () {
+                    alert("err fun()");
+                }
+
+            });
+        }
+        
+        //拼order
+        function ordersInfo(datas) {
+            orders = datas;
+            $("#table").html("");
+            for (var i = 0; i < orders.length; i++) {
+                var str = "<tr>\n" +
+                    "                            <td id=\"orderID" +
+                    i +
+                    "\">" +
+                    orders[i].orderID +
+                    "</td>\n" +
+                    "                            <td id=\"clientID" +
+                    i +
+                    "\">" +
+                    orders[i].clientID +
+                    "</td>\n" +
+                    "                            <td>\n" +
+                    "                                <input id=\"price" +
+                    i +
+                    "\" value=\"" +
+                    orders[i].payment +
+                    "\">\n" +
+                    "                            </td>\n" +
+                    "                            <td>\n" +
+
+                    "                                <SELECT id=\"payStatus1\">\n" +
+                    "                                    <OPTION id=\"paySelectTrue" +
+                    i +
+                    "\" value=1>已支付</OPTION>\n" +
+                    "                                    <OPTION id=\"paySelectFalse" +
+                    i +
+                    "\" value=0>未支付</OPTION>\n" +
+                    "                                </SELECT>\n" +
+
+                    "                            </td>\n" +
+                    "                            <td>\n" +
+
+                    "                                <SELECT id=\"travelStatus1\">\n" +
+                    "                                    <OPTION id=\"travelSelectTrue" +
+                    i +
+                    "\" value=1>已出行</OPTION>\n" +
+                    "                                    <OPTION id=\"travelSelectFalse" +
+                    i +
+                    "\" value=0>未出行</OPTION>\n" +
+                    "                                </SELECT>\n" +
+
+                    "                            </td>\n" +
+                    "                            <td>\n" +
+                    "                                <input style='width: 112px;' id=\"travelDate" +
+                    i +
+                    "\" value=\"" +
+                    orders[i].travelDate +
+                    "\">\n" +
+                    "                            </td>\n" +
+                    "                            <td id=\"amount" +
+                    i +
+                    "\" onclick=\"sendOrderID(" +
+                    orders[i].orderID +
+                    ")\" data-toggle='modal' data-target='#myModal'>" +
+                    orders[i].amount +
+                    "</td>\n" +
+                    "                            <td id=\"orderDate" +
+                    i +
+                    "\">" +
+                    orders[i].date +
+                    "</td>\n" +
+                    "                            <td>\n" +
+                    "                                <span style=\"color: dodgerblue;\" onclick=\"orderUpdate(" +
+                    orders[i].orderID +
+                    ")\">修改</span>\n" +
+                    "                                &nbsp;&nbsp;\n" +
+                    "                                <span style=\"color: red\" onclick=\"deleteOrder(" +
+                    orders[i].orderID +
+                    ")\">删除</span>\n" +
+                    "                            </td>\n" +
+                    "                        </tr>";
+                $("#table").append(str);
+            }
+        }
+    </script>
+</head>
+<body>
+<div class="col-md-10 col-md-offset-1">
+    <div class="row">
+        <h1 class="text-center">
+            订单信息
+        </h1>
+    </div>
+    <!--基本信息-->
+    <div class="row">
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <h3 class="panel-title">订单</h3>
+            </div>
+            <div class="panel-body" style="padding: 0px">
+                    <!--订单号 用户ID 金额 订单状态 旅行日期 人数 订单提交日期 删除订单-->
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>用户ID</th>
+                        <th>订单金额</th>
+                        <th>支付状态</th>
+                        <th>出行状态</th>
+                        <th>旅行日期</th>
+                        <th>出行人数</th>
+                        <th>订单提交日期</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="table">
+                        <tr>
+                            <td id="orderID1">5012617397465088</td>
+                            <td id="clientID1">1</td>
+                            <td>
+                                <input id="price1" value="1000">
+                            </td>
+                            <td>
+                                <SELECT id="payStatus1">
+                                    <OPTION id="paySelectTrue1" value=1>已支付</OPTION>
+                                    <OPTION id="paySelectFalse1" value=0>未支付</OPTION>
+                                </SELECT>
+                            </td>
+                            <td>
+                                <SELECT id="travelStatus1">
+                                    <OPTION id="travelSelectTrue1" value=1>已出行</OPTION>
+                                    <OPTION id="travelSelectFalse1" value=0>未出行</OPTION>
+                                </SELECT>
+                            </td>
+                            <td>
+                                <input id="travelDate1" value="2012-1-1">
+                            </td>
+                            <td id="amount1" onclick="sendOrderID(123123)" data-toggle='modal' data-target='#myModal'>2</td>
+                            <td id="orderDate1">2012-1-1</td>
+                            <td>
+                                <span style="color: dodgerblue" onclick="orderUpdate(1)">修改</span>
+                                &nbsp;&nbsp;
+                                <span style="color: red" onclick="deleteOrder(1)">删除</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>5012617397465088</td>
+                            <td>1</td>
+                            <td>
+                                <input id="" value="1000">
+                            </td>
+                            <td>
+                                <SELECT id="payStatus">
+                                    <OPTION value="">已支付</OPTION>
+                                    <OPTION value="1">未支付</OPTION>
+                                </SELECT>
+                            </td>
+                            <td>
+                                <SELECT id="travelStatus">
+                                    <OPTION value="">已出行</OPTION>
+                                    <OPTION value="1">未出行</OPTION>
+                                </SELECT>
+                            </td>
+                            <td>旅行日期</td>
+                            <td>出行人数</td>
+                            <td>订单提交日期</td>
+                            <td>删除</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <!-- 模态框1（Modal） -->
+                <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                    &times;
+                                </button>
+                                <h4 class="modal-title" id="myModalLabel">
+                                    订单号：<span id="orderIDspan">5012617397465088</span>
+                                </h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <input hidden id="orderIDinput">
+                                    <table class="table table-striped">
+                                        <thead>
+                                        <tr>
+                                            <th>姓名</th>
+                                            <th>身份证号</th>
+                                            <th>身份</th>
+                                            <th>电话号码</th>
+                                            <th>操作</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="table2">
+                                        <tr>
+                                            <td id="guestName1">姓名</td>
+                                            <td id="guestIdentity1">身份证号</td>
+                                            <td id="guestStatus1">身份</td>
+                                            <td>
+                                                <input id="phoneNumber1" value="13115151881">
+                                            </td>
+                                            <td>
+                                                <span onclick="" style="color: #de3226">删除</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <input id="guestName" value="">
+                                            </td>
+                                            <td>
+                                                <input id="identity" value="">
+                                            </td>
+                                            <td>
+                                                <input id="guestStatus" value="">
+                                            </td>
+                                            <td>
+                                                <input id="phoneNumber2" value="13115151881">
+                                            </td>
+                                            <td>
+                                                <span onclick="" style="color: #de3226">删除</span>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="newGuest()">
+                                    新增人员
+                                </button>
+                            </div>
+                        </div><!-- /.modal-content -->
+                    </div><!-- /.modal -->
+                </div>
+                <!-- 模态框1（Modal） -->
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

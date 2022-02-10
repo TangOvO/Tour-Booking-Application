@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>管理系统</title>
+
+    <script type="text/javascript" src="../js/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="../js/LocationIP.js"></script>
+    <script>
+        $(function () {
+            $("#btn").click(function () {
+                var adminName = $("#adminName").val();
+                var pwd = $("#password").val();
+                //console.log(pwd);
+                if (adminName == "" || adminName == undefined) {
+                    alert("用户名不能为空");
+                    $("#adminName").focus();
+                } else if (pwd == "" || pwd == undefined) {
+                    alert("密码不能为空");
+                    $("#password").focus();
+                } else {
+                    $.ajax({
+                        "url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/AdminLoginServlet",
+                        "type": "post",
+                        "dataType": "json",
+                        "data": {
+                            "name": adminName,
+                            "pwd": pwd
+                        },
+                        "success": function (data) {
+                            /**
+                             * success函数不执行
+                             * 原因：form表单冲突，删除form标签后恢复正常
+                             */
+                            console.log(data.errorCode); //测试
+                            if (data.errorCode === 100) {
+                                window.location.href = "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/adminPage/list.html";
+                            } else {
+                                alert("密码或用户名错误！");
+                            }
+                        },
+                        error: function () {
+                            console.log("err fun()");
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="login-bar clearfix">
+    <ul style="list-style-type: none">
+        <li class="inp">
+            <i class="login-name">登录名</i><input id="adminName" type="text" placeholder="管理员用户名">
+            <a href="javascript:" class="clear"></a>
+        </li>
+        <li class="inp pw">
+            <i class="login-pw">密码</i>
+            <input id="password" type="password" placeholder="密码">
+            <a href="javascript:" class="clear"></a>
+            <a href="javascript:" data-show="1" class="change " style="display: block;"></a>
+        </li>
+
+    </ul>
+
+    <div class="login-btn">
+        <button id="btn" class="submit" type="">登录</button> <!---->
+    </div>
+</div>
+</body>
+</html>

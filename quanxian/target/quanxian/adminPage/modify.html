@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>路线发布与修改</title>
+    <link rel="stylesheet" href="../bootstrap-3.3.7-dist/css/bootstrap.min.css">
+    <style>
+        table{
+            font-size: 20px;
+            text-align: center;
+        }
+
+        th{
+            text-align:center;/** 设置水平方向居中 */
+            vertical-align:middle/** 设置垂直方向居中 */
+        }
+
+        table[id=table1] input,
+        table[id=table2] input{
+            border: none;
+            background-color: transparent;
+            width: 500px;
+        }
+
+        table[id=table3] input
+        {
+            border: none;
+            background-color: transparent;
+            width: 225px;
+            height: 100px;
+        }
+
+        #table3 img {
+            width: 120px;
+            height: 120px;
+            border: 1px solid gainsboro;
+            padding: 5px;
+        }
+
+        #table3 button{
+            width: 119px;
+            height: 119px;
+            border: 1px solid gainsboro;
+        }
+
+        input::-webkit-input-placeholder {
+            /* WebKit browsers */
+            color: black;
+        }
+
+        #featureImgDiv img {
+            width: 450px;
+            height: 280px;
+        }
+
+        #featureImgDiv>div:hover {
+            border: 3px solid dimgrey;
+        }
+
+        /*修改popover样式*/
+        .popover{
+            background:dimgrey;
+        }
+
+        /*修改popover箭头的颜色*/
+        .popover.right>.arrow:after {
+            border-right-color: dimgrey;
+        }
+        .popover.bottom>.arrow:after {
+            border-bottom-color: dimgrey;
+        }
+    </style>
+
+    <script type="text/javascript" src="../js/LocationIP.js"></script>
+    <script type="text/javascript" src="../js/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="../bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+    <script>
+        var routineID;
+        var featureImgID; //删除用
+        var alterImgPos; //替换图片位置
+        var details;
+        var detailJSON;
+        var discountJSON;
+        var routineJSON;
+        var imgs;
+        var numOfDetail = 0; //记录detail条数
+        var randomNum = 0;//新增detail用，用于time属性
+
+        //var image; //错误方法： image = imgs[i], 新增直接改这个image，然后放入imgs传回去。会修改原始数组的值
+        var image = {
+            routineID: "",
+            no: "",
+            img: ""
+        };
+        var detail = {
+            routineID: "",
+            time: "",
+            s1: "",
+            s2: "",
+            s3: "",
+            img1: "",
+            img2: "",
+            img3: "",
+        };
+        //激活popover插件
+        $(function () {
+            $(".popover-options a").popover({html : true });
+        });
+
+        $(function () {
+            /**
+             * input file的change事件
+             * 如果你没有选择文件的话，直接点击取消的话，就不会触发change事件。
+             */
+            $("#inputfile1").change(function () {
+                $("#pic1").attr("src",URL.createObjectURL($(this)[0].files[0]));
+                //console.log("name:" + $("#inputfile1")[0].files[0].name); //测试 文件名获取
+            });
+            $("#inputfile2").change(function () {
+                $("#pic2").attr("src",URL.createObjectURL($(this)[0].files[0]));
+            });
+            $("#inputfileFImg").change(function () {
+                $("#featureImg").attr("src",URL.createObjectURL($(this)[0].files[0]));
+            });
+            $("#inputfileDImg").change(function () {
+                $("#detailImg").attr("src",URL.createObjectURL($(this)[0].files[0]));
+            });
+            $("#inputfileAlertImg").change(function () {
+                $("#featureImgAlertInput").attr("src",URL.createObjectURL($(this)[0].files[0]));
+            });
+        });
+
+        //获取路线信息
+        routineID = window.sessionStorage.getItem("routineID");
+
+        $.ajax({
+            "url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/DeatailServlet",
+            "dataType": "json",
+            "type": "post",
+            "data": {
+                routineID: routineID
+            },
+            "success": function (data) {
+                var routine = data.result[0];
+                var discount = data.result[2];
+                discountJSON = data.result[2];
+                routineJSON = data.result[0];
+
+                /**
+                 *  data的属性取出来不是json？？
+                 *  console.log("data:" + data);
+                 *  console.log("转:" + JSON.stringify(routineJSON));
+                */
+
+
+                //编号
+                $("#routineID").val(routineID);
+                //优惠信息
+                if (discount.discount1 != undefined && !("" === discount.discount1)) {
+                    $("#discount1").val(discount.discount1);
+                }
+                if (discount.discount2 != undefined && !("" === discount.discount2)) {
+                    $("#discount2").val(discount.discount2);
+                }
+                if (discount.discount3 != undefined && !("" === discount.discount3)) {
+                    $("#discount3").val(discount.discount3);
+                }
+                if (discount.discount4 != undefined && !("" === discount.discount4)) {
+                    $("#discount4").val(discount.discount4);
+                }
+
+                //标签
+                if (routine.features != undefined && !(routine.features == "")) {
+                    $("#lable1").val(routine.features);
+                }
+                if (routine.detail != undefined && !(routine.detail == "")) {
+                    $("#lable2").val(routine.detail);
+                }
+                if (routine.notice != undefined && !(routine.notice == "")) {
+                    $("#lable3").val(routine.notice);
+                }
+
+                //人数
+                $("#planNum").val(routine.totalClients);
+                $("#actualNum").val(routine.actualClients);
+
+                //班期
+                $("#date").val(routine.date);
+                //旅行地点
+                $("#location").val(routine.location);
+                //出发地点
+                $("#apartLocation").val(routine.departLocation);
+                //图片1
+                $("#detailPic1").attr("src", "../images/show/" + routine.img1);
+                //图片2
+                $("#detailPic2").attr("src", "../images/show/" + routine.img2);
+
+                //标题
+                $("#title").val(routine.title);
+                //价格
+                $("#price").val(routine.price);
+
+
+
+                //产品特色
+                $.ajax({
+                    url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/FeatureImgServlet",
+                    dataType: "json",
+                    type: "post",
+                    data: {
+                        routineID: routineID
+                    },
+                    success: function (data) {
+                        imgs = data.result;
+                        //image复制，不要直接=，会影响原数组 //image = imgs[0];
+                        image.routineID = imgs[0].routineID;
+                        image.no = imgs[0].no;
+                        image.img = imgs[0].img;
+
+                        $("#featureImgDiv").html("");
+                        for (var i = 0; i < imgs.length; i++) {
+                            var str = "<div id=\"featureImgDiv" +
+                                i +
+                                "\" class=\"popover-options\" style=\"width: 450px;\">" +
+                                "<a type=\"button\" data-container=\"body\" data-toggle=\"popover\" " +
+                                "data-content=\"<button onclick='dataSend(" +
+                                i +
+                                ")' type='button' class='btn btn-info' data-toggle='modal' data-target='#myModal2'>替换</button>" + //data-toggle='modal' data-target='#myModal2'
+                                "              &nbsp;&nbsp;<button onclick='deleteFeatureImg(" +
+                                i +
+                                ")' type='button' class='btn btn-danger'>删除</button>\">\n" +
+                                "    <img id=\"featureImg" +
+                                i +
+                                "\" src=\"../images/featureImg/" +
+                                imgs[i].img +
+                                "\" class=\"img-thumbnail\">" +
+                                "</a>" +
+                                "</div>";
+                            $("#featureImgDiv").append(str);
+                            //启用popover属性
+                            $(".popover-options a").popover({html : true });
+                        }
+                    },
+                    error: function () {
+                        alert("err fun()");
+                    }
+                });
+
+
+                //行程详情
+                $.ajax({
+                    "url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/RoutineDetailServlet",
+                    "dataType": "json",
+                    "type": "post",
+                    "data": {
+                        routineID: routineID
+                    },
+                    success: function (data) {
+                        details = data.result;
+                        if (details == undefined || details.length == 0) {
+                            return; //可以阻止success fun继续执行
+                        }
+
+                        $("#table3").html("<tr>\n" +
+                            "                            <th>时间</th>\n" +
+                            "                            <th>地点</th>\n" +
+                            "                            <th>事件</th>\n" +
+                            "                            <th>时长</th>\n" +
+                            "                            <th>图片1</th>\n" +
+                            "                            <th>图片2</th>\n" +
+                            "                            <th>图片3</th>\n" +
+                            "                            <th></th>\n" +
+                            "                        </tr>");
+
+                        randomNum = details[details.length - 1].time; //用于新插入detail按顺序生成时间
+
+                        for (var i = 0; i < details.length; i++) {
+
+                            var str = "<tr>";
+                            str = str + "<td><input style='width: 105px' disabled id='detailTime" +
+                                i +
+                                "' value='" +
+                                details[i].time +
+                                "'></td>";
+                            if (details[i].s1 != undefined && details[i].s1 != "") {
+                                str = str + "<td><input id='detail" +
+                                    i +
+                                    "1' value='" +
+                                    details[i].s1 +
+                                    "'>" +
+                                    "</td>";
+                            } else{
+                                str = str + "<td><input id='detail" +
+                                    i +
+                                    "1'></td>";
+                            }
+                            if (details[i].s2 != undefined && details[i].s2 != "") {
+                                str = str + "<td><input id='detail" +
+                                    i +
+                                    "2' value='" +
+                                    details[i].s2 +
+                                    "'>" +
+                                    "</td>";
+                            } else{
+                                str = str + "<td><input id='detail" +
+                                    i +
+                                    "2'></td>";
+                            }
+                            if (details[i].s3 != undefined && details[i].s3 != "") {
+                                str = str + "<td><input id='detail" +
+                                    i +
+                                    "3' value='" +
+                                    details[i].s3 +
+                                    "'>"+
+                                    "</td>";
+                            } else{
+                                str = str + "<td><input id='detail" +
+                                    i +
+                                    "3'></td>";
+                            }
+                            if (details[i].img1 != undefined && details[i].img1 != "") {
+
+                                str = str + "<td>" +
+                                    "      <div class=\"popover-options\">" +
+                                    "      <a type=\"button\" data-container=\"body\" data-toggle=\"popover\" data-placement=\"bottom\" data-content=\"\n" +
+                                    "      <button onclick='dataSend1(" + i + "1" + ")' data-toggle='modal' data-target='#myModal'" +
+                                    " type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;\n" +
+                                    "      <button onclick='deleteDetailImg(" + i + "1" + ")' type='button' class='btn btn-danger'>删除</button>\n" +
+                                    "      \">" +
+                                    "      <img src=\"../images/detailImg/" +
+                                    details[i].img1 +
+                                    "\">" +
+                                    "      </a>" +
+                                    "      </div>" +
+                                    "      </td>";
+                            } else{
+                                str = str + "<td>" +
+                                    "<button onclick='dataSend1(" +
+                                    i + "1" +
+                                    ")' id='detailImg" +
+                                    i +
+                                    "1' class=\"glyphicon glyphicon-plus\" data-toggle=\"modal\" data-target=\"#myModal\"></button>\n" +
+                                    "</td>";
+                            }
+                            if (details[i].img2 != undefined && details[i].img2 != "") {
+                                str = str + "<td>" +
+                                    "      <div class=\"popover-options\">" +
+                                    "      <a type=\"button\" data-container=\"body\" data-toggle=\"popover\" data-placement=\"bottom\" data-content=\"\n" +
+                                    "      <button onclick='dataSend1(" + i + "2" + ")' data-toggle='modal' data-target='#myModal'" +
+                                    " type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;\n" +
+                                    "      <button onclick='deleteDetailImg(" + i + "2" + ")' type='button' class='btn btn-danger'>删除</button>\n" +
+                                    "      \">" +
+                                    "      <img src=\"../images/detailImg/" +
+                                    details[i].img2 +
+                                    "\">" +
+                                    "      </a>" +
+                                    "      </div>" +
+                                    "      </td>";
+                            } else{
+                                str = str + "<td>" +
+                                    "<button onclick='dataSend1(" +
+                                    i + "2" +
+                                ")' id='detailImg" +
+                                i +
+                                "1' class=\"glyphicon glyphicon-plus\" data-toggle=\"modal\" data-target=\"#myModal\"></button>\n" +
+                                "</td>";
+                            }
+                            if (details[i].img3 != undefined && details[i].img3 != "") {
+                                str = str + "<td>" +
+                                    "      <div class=\"popover-options\">" +
+                                    "      <a type=\"button\" data-container=\"body\" data-toggle=\"popover\" data-placement=\"bottom\" data-content=\"\n" +
+                                    "      <button onclick='dataSend1(" + i + "3" + ")' data-toggle='modal' data-target='#myModal'" +
+                                    " type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;\n" +
+                                    "      <button onclick='deleteDetailImg(" + i + "3" + ")' type='button' class='btn btn-danger'>删除</button>\n" +
+                                    "      \">" +
+                                    "      <img src=\"../images/detailImg/" +
+                                    details[i].img3 +
+                                    "\">" +
+                                    "      </a>" +
+                                    "      </div>" +
+                                    "      </td>";
+                            } else{
+                                str = str + "<td>" +
+                                    "<button onclick='dataSend1(" +
+                                    i + "3" +
+                                ")' id='detailImg" +
+                                i +
+                                "1' class=\"glyphicon glyphicon-plus\" data-toggle=\"modal\" data-target=\"#myModal\"></button>\n" +
+                                "</td>";
+                            }
+                            str = str + "<td>\n" +
+                                "    <button onclick=\"deleteDetail(" +
+                                i +
+                                ")\" type=\"button\" class=\"btn btn-danger\">删除该条</button>\n" +
+                                "</td>";
+                            str = str + "</tr>";
+                            console.log("str：" + str); //测试
+                            $("#table3").append(str);
+                            numOfDetail++;
+                            //激活popover
+                            $(".popover-options a").popover({html : true });
+                        }
+                        $("#table3").append("<tr id='buttonTr'>\n" +
+                            "<td></td>\n" +
+                            "<td></td>\n" +
+                            "<td></td>\n" +
+                            "<td></td>\n" +
+                            "<td></td>\n" +
+                            "<td></td>\n" +
+                            "<td>\n" +
+                            "<button style=\"width: 80px; height: 40px; margin: 15px\" class=\"btn btn-primary\" onclick=\"newDetailInsert()\">\n" +
+                            "+新增\n" +
+                            "</button>\n" +
+                            "</td>\n" +
+                            "<td>\n" +
+                            "<button style=\"width: 80px; height: 40px; margin: 15px\" class=\"btn btn-primary\" onclick=\"detailSubmit()\">\n" +
+                            "提交\n" +
+                            "</button>\n" +
+                            "</td>\n" +
+                            "</tr>");
+                    },
+                    error: function () {
+                        alert("err fun()");
+                    }
+                });
+            }
+        });
+
+        /**
+         * 基本信息提交按钮
+         * 提交部分路线信息，discount信息
+         */
+        function submitBasicInfo() {
+            /**
+             * 修改JSON对象的属性
+             * 修改json字符串是无效的
+             * 应该修改json的对象在转成json字符串发送
+             *
+             */
+            discountJSON.discount1 = $("#discount1").val();
+            discountJSON.discount2 = $("#discount2").val();
+            discountJSON.discount3 = $("#discount3").val();
+            discountJSON.discount4 = $("#discount4").val();
+            routineJSON.title = $("#title").val();
+            routineJSON.price = $("#price").val();
+            routineJSON.features = $("#lable1").val();
+            routineJSON.detail = $("#lable2").val();
+            routineJSON.notice = $("#lable3").val();
+            routineJSON.totalClients = $("#planNum").val();
+            routineJSON.date = $("#date").val();
+            routineJSON.location = $("#location").val();
+            routineJSON.departLocation = $("#apartLocation").val();
+
+            console.log("routineJSON:" + JSON.stringify(routineJSON));//测试
+            console.log("discountJSON:" + JSON.stringify(discountJSON));//测试
+
+            if (confirm("确定修改？")) {
+                $.ajax({
+                    url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/RoutineDiscountUpdateServlet",
+                    data: {
+                        routineJSON: JSON.stringify(routineJSON),
+                        discountJSON: JSON.stringify(discountJSON)
+                    },
+                    dataType: "json",
+                    type: "post",
+                    success: function (data) {
+                        if (data.errorCode == 200) {
+                            alert("路线基础信息更新成功！")
+                            location.reload();
+                        }
+                    },
+                    error: function () {
+                        alert("err fun()");
+                    }
+                });
+            }
+        }
+        
+        //图片1,2提交按钮
+        function detailPicUploadBtn(id) {
+            var formData = new FormData();//这里需要实例化一个FormData来进行文件上传
+            if (id == 'detailPic1') {
+                routineJSON.img1 = $("#inputfile1")[0].files[0].name;
+                formData.append("file",$("#inputfile1")[0].files[0]);
+
+            }
+            if (id == 'detailPic2') {
+                routineJSON.img2 = $("#inputfile2")[0].files[0].name;
+                formData.append("file",$("#inputfile2")[0].files[0]);
+
+            }
+            console.log("routine:" + JSON.stringify(routineJSON)); //测试
+
+            if (confirm("确定修改？")) {
+                //文件上传需要分开吗？？？？
+                //先上传图片
+                $.ajax({
+                    url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ImgUploadServlet",
+                    data: formData,
+                    dataType: "json",
+                    type: "post",
+                    processData : false,//用于对data参数进行序列化处理 这里必须false
+                    contentType : false,//必须
+                    success: function (data) {
+                        if (data.errorCode == 200) {
+                            console.log("图片上传成功"); //测试
+
+                            //servlet 更新routine img
+                            $.ajax({
+                                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ImgUploadServlet",
+                                data: {
+                                    method: "routineUpdate",
+                                    routineJSON: JSON.stringify(routineJSON)
+                                },
+                                dataType: "json",
+                                type: "post",
+                                success: function (data) {
+                                    if (data.errorCode == 200) {
+                                        alert("图片更新成功！");
+                                        location.reload();
+                                    }
+                                },
+                                error: function () {
+                                    alert("routineUpdate err fun()");
+                                }
+                            });
+                        }
+                    },
+                    error: function () {
+                        alert("err fun()");
+                    }
+                });
+            }
+        }
+        
+        //+新增提交Btn
+        function newFeatureImgInsert() {
+            var order = $("#featureImgOrder").val();
+            if (order == undefined || !(/(^[1-9]\d*$)/.test(order))) { //!(/(^[1-9]\d*$)/.test(num))
+                alert("请输入正确的数字！");
+                $("#featureImgOrder").focus();
+                return false;
+            }
+            picUpload('featureImgUploadDiv'); //隐藏div
+            var formData = new FormData();
+            formData.append("file", $("#inputfileFImg")[0].files[0]);
+
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ImgUploadServlet?method=featureImgUpload",
+                data: formData,
+                processData : false,//用于对data参数进行序列化处理 这里必须false
+                contentType : false,//必须
+                dataType: "json",
+                type: "post",
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        image.no = order;
+                        image.img = $("#inputfileFImg")[0].files[0].name//上传文件名称 file input的id inputfileFImg
+
+                        //imgs中插入img
+                        imgs.splice(image.no - 1, 0, image);
+                        //修改img的no
+                        for (var i = order; i < imgs.length; i++) {
+                            imgs[i].no++;
+                            console.log("name:" + imgs[i].img + "   order:" + imgs[i].no);//测试
+                        }
+                        var featureImgsJSON = JSON.stringify(imgs);
+                        console.log("插入后的imgs：" + featureImgsJSON);//测试
+                        //更新featureImg
+                        featureImgUpdateAjax(JSON.stringify(imgs));
+                    }
+                },
+                error: function () {
+                    alert("newFeatureImgInsert err fun()");
+                }
+            });
+        }
+
+        //featureImg删除Btn。
+        function deleteFeatureImg(pos) {
+            if (confirm("是否删除改图片?")) {
+                imgs.splice(pos, 1);
+                //改no
+                for (var i = imgs.length - 1; i > parseInt(pos) - 1; i--) {
+                    imgs[i].no--;
+                }
+                //下面注释是测试
+                /*
+                for (var i = 0; i < imgs.length; i++) {
+                    console.log("no:" + imgs[i].no + "  name:" + imgs[i].img); //测试
+                }
+                 */
+                //更新featureImg
+                featureImgUpdateAjax(JSON.stringify(imgs));
+            }
+        }
+
+        //detail整条删除Btn。
+        function deleteDetail(pos) {
+            console.log("deleteDetail:" + pos);
+            if (confirm("是否删除该条行程？")) {
+                details.splice(pos, 1);
+                var detailsJSON = JSON.stringify(details);
+                var method = "updateAllDetail";
+                detailsUpdateAjax(JSON.stringify(details), method);
+            }
+        }
+
+        //featureImg替换，模态框提交Btn
+        function featureImgAlert() {
+            var pos = $("#forFeatureImgNum").val();
+            //console.log("pos:" + $("#forFeatureImgNum").val());//测试
+
+            if (confirm("是否替换该图片？")) {
+                var formData = new FormData();
+                formData.append("file", $("#inputfileAlertImg")[0].files[0]);
+                //上传图片
+                $.ajax({
+                    url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ImgUploadServlet?method=featureImgUpload",
+                    data: formData,
+                    processData : false,//用于对data参数进行序列化处理 这里必须false
+                    contentType : false,//必须
+                    dataType: "json",
+                    type: "post",
+                    success: function (data) {
+                        if (data.errorCode == 200) {
+                            //更新featureImg
+                            imgs[pos].img = $("#inputfileAlertImg")[0].files[0].name;
+                            featureImgUpdateAjax(JSON.stringify(imgs));
+                        }
+                    },
+                    error: function () {
+                        alert("newFeatureImgInsert err fun()");
+                    }
+                });
+            }
+        }
+
+
+        //发imgs更新Ajax
+        function featureImgUpdateAjax(imgsJSON) {
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ImgUploadServlet?method=featureImgUpdate",
+                data: {
+                    featureImgsJSON: imgsJSON,
+                },
+                dataType: "json",
+                type: "post",
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        alert("操作成功！");
+                        location.reload();
+                    }
+                },
+                error: function () {
+                    alert("err fun()");
+                }
+            });
+        }
+
+        //details更新Ajax
+        function detailsUpdateAjax(detailsJSON, method) {
+            $.ajax({
+                "url": "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/DetailCopeServlet",
+                "dataType": "json",
+                "type": "post",
+                "data": {
+                    method: method,
+                    detailsJSON: detailsJSON
+                },
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        alert("操作成功！");
+                        location.reload();
+                    }
+                },
+                error: function () {
+                    alert("detailsUpdateAjax err fun()");
+                }
+            });
+        }
+
+        //detailImg替换，模态框提交Btn
+        function detailImgAlter() {
+            var fileName = $("#inputfileDImg")[0].files[0].name;
+            var pos = $("#forFeatureImgNum1").val();
+            console.log("detailImg位置0：" + pos[0]); //测试
+            console.log("detailImg位置1：" + pos[1]); //测试
+            var formData = new FormData();
+            formData.append("file", $("#inputfileDImg")[0].files[0]);
+            $.ajax({
+                url: "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/ImgUploadServlet?method=detailImgUpdate",
+                data: formData,
+                dataType: "json",
+                type: "post",
+                processData: false,//用于对data参数进行序列化处理 这里必须false
+                contentType: false,//必须
+                success: function (data) {
+                    if (data.errorCode == 200) {
+                        console.log("图片上传成功"); //测试
+
+                        if (pos[1] == undefined) { //第一行
+                            switch (pos[0]) {
+                                case "1":
+                                    details[0].img1 = fileName;
+                                    break;
+                                case "2":
+                                    details[0].img2 = fileName;
+                                    break;
+                                case "3":
+                                    details[0].img3 = fileName;
+                                    break;
+                            }
+                            console.log("detail img json:" + JSON.stringify(details[0]));//测试
+                            //发ajax更新一条detail
+                            detailsUpdateAjax(JSON.stringify(details[0]), "updateOneImg");
+                        } else {
+                            switch (pos[1]) {
+                                case "1":
+                                    details[pos[0]].img1 = fileName;
+                                    break;
+                                case "2":
+                                    details[pos[0]].img2 = fileName;
+                                    break;
+                                case "3":
+                                    details[pos[0]].img3 = fileName;
+                                    break;
+                            }
+                            console.log("detail img json:" + JSON.stringify(details[pos[0]] + "---" + pos[0]));//测试
+                            //发ajax更新一条detail
+                            detailsUpdateAjax(JSON.stringify(details[pos[0]]), "updateOneImg");
+                        }
+                    }
+                },
+                error: function () {
+                    alert("err fun()");
+                }
+            });
+
+        }
+
+        //行程详情提交按钮
+        function detailSubmit() {
+            console.log("numOfDetail:" + numOfDetail);//测试
+            for (var i = 0; i < numOfDetail; i++) {
+                details[i].s1 = $("#detail" + i + "1").val();
+                details[i].s2 = $("#detail" + i + "2").val();
+                details[i].s3 = $("#detail" + i + "3").val();
+            }
+            console.log("details:\n" + JSON.stringify(details));//测试
+            //发Ajax更新details
+            detailsUpdateAjax(JSON.stringify(details), "updateAllDetail");
+        }
+
+        //删除detail图片
+        function deleteDetailImg(pos) {
+            pos = String(pos);
+            console.log("删除位置：" + pos);//测试
+            console.log("删除位置0：" + pos[0]);//测试
+            console.log("删除位置1：" + pos[1]);//测试
+            if (pos[1] == undefined) { //第一行
+                switch (pos[0]) {
+                    case "1":
+                        details[0].img1 = "";
+                        break;
+                    case "2":
+                        details[0].img2 = "";
+                        break;
+                    case "3":
+                        details[0].img3 = "";
+                        break;
+                }
+                console.log("del detailimg json:" + JSON.stringify(details[0]));//测试
+                //发ajax更新一条detail
+                detailsUpdateAjax(JSON.stringify(details[0]), "updateOneImg");
+            } else {
+                switch (pos[1]) {
+                    case "1":
+                        details[pos[0]].img1 = "";
+                        break;
+                    case "2":
+                        details[pos[0]].img2 = "";
+                        break;
+                    case "3":
+                        details[pos[0]].img3 = "";
+                        break;
+                }
+                console.log("del detailimg json:" + JSON.stringify(details[pos[0]] + "---" + pos[0]));//测试
+                //发ajax更新一条detail
+                detailsUpdateAjax(JSON.stringify(details[pos[0]]), "updateOneImg");
+            }
+        }
+
+        //新增一条空的detail
+        function newDetailInsert() {
+            var str = "<tr>";
+            str = str + "<td><input style='width: 105px' disabled id='detailTime" +
+                numOfDetail +
+                "' value=''></td>";
+
+            str = str + "<td><input id='detail" + numOfDetail + "1'></td>";
+            str = str + "<td><input id='detail" + numOfDetail + "2'></td>";
+            str = str + "<td><input id='detail" + numOfDetail + "3'></td>";
+
+            str = str + "<td>" +
+                "<button onclick='dataSend1(" +
+                numOfDetail + "1" +
+                ")' id='detailImg" +
+                numOfDetail +
+                "1' class=\"glyphicon glyphicon-plus\" data-toggle=\"modal\" data-target=\"#myModal\"></button>\n" +
+                "</td>";
+
+            str = str + "<td>" +
+                "<button onclick='dataSend1(" +
+                numOfDetail + "2" +
+                ")' id='detailImg" +
+                numOfDetail +
+                "1' class=\"glyphicon glyphicon-plus\" data-toggle=\"modal\" data-target=\"#myModal\"></button>\n" +
+                "</td>";
+
+            str = str + "<td>" +
+                "<button onclick='dataSend1(" +
+                numOfDetail + "3" +
+                ", " +
+                ")' id='detailImg" +
+                numOfDetail +
+                "1' class=\"glyphicon glyphicon-plus\" data-toggle=\"modal\" data-target=\"#myModal\"></button>\n" +
+                "</td>";
+
+            str = str + "<td>\n" +
+                "    <button onclick=\"deleteDetail(" +
+                numOfDetail +
+                ")\" type=\"button\" class=\"btn btn-danger\">删除该条</button>\n" +
+                "</td>";
+            str = str + "</tr>";
+            console.log("str：" + str); //测试
+            $("#buttonTr").before(str);
+            numOfDetail++;
+            //激活popover
+            $(".popover-options a").popover({html : true });
+
+            //新插入一条detail
+            randomNum++;
+            detail.routineID = routineID;
+            detail.time = randomNum;
+            detailsUpdateAjax(JSON.stringify(detail), "insertOneDetail");
+        }
+
+        //替换btn
+        function alterPic(pos) {
+            $("#" + pos).show();
+        }
+
+        //上传图片按钮方法
+        function picUpload(pos) {
+            $("#" + pos).hide();
+        }
+
+        //给模态框传值，传替换featureImg的位置
+        function dataSend(pos) {
+            //$("#featureImgDiv" + pos).popover('hide');
+            $(".popover-options a").popover('hide');
+            console.log("datasend:" + pos);//测试
+            $("#forFeatureImgNum").val(pos);
+        }
+        //给模态框传值，传替换detailImg的位置
+        function dataSend1(pos) {
+            //$("#featureImgDiv" + pos).popover('hide');
+            $(".popover-options a").popover('hide');
+            console.log("pos:" + pos);//测试
+            $("#forFeatureImgNum1").val(pos);
+        }
+
+        //查看报名信息Btn
+        function orderInfo() {
+            window.sessionStorage.setItem("routineID", routineID);
+            var url = "http://" + ipOfLocation + ":" + portOfLocation + "/quanxian_war/adminPage/orderInfo.html";
+            window.open(url);
+        }
+    </script>
+</head>
+<body>
+    <div class="col-md-10 col-md-offset-1">
+        <div class="row">
+            <h1 class="text-center">
+                路线发布与修改
+            </h1>
+        </div>
+        <!--基本信息-->
+        <div class="row">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">基本信息</h3>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-6" style="padding: 0px">
+                        <table id="table1" class="table-striped" width="635px">
+                            <tr>
+                                <td>编号： </td>
+                                <td><input id="routineID" disabled placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>标题：</td>
+                                <td><input id="title" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>价格：</td>
+                                <td><input id="price" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>标签1：</td>
+                                <td><input id="lable1" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>标签2：</td>
+                                <td><input id="lable2" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>标签3：</td>
+                                <td><input id="lable3" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>计划人数：</td>
+                                <td><input id="planNum" placeholder="" ></td>
+                            </tr>
+                            <tr>
+                                <td>实际人数：</td>
+                                <td>
+                                    <input id="actualNum" placeholder="" disabled style="width: 370px">
+                                    <button style="margin: 5px" class="btn btn-success" onclick="orderInfo()">
+                                        查看报名信息
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6" style="padding: 0px">
+                        <table id="table2" class="table-striped" width="630px">
+                            <tr>
+                                <td>班期： </td>
+                                <td><input id="date" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>旅行地点：</td>
+                                <td><input id="location" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>出发地点：</td>
+                                <td><input id="apartLocation" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>优惠1：</td>
+                                <td><input id="discount1" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>优惠2：</td>
+                                <td><input id="discount2" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>优惠3：</td>
+                                <td><input id="discount3" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>优惠4：</td>
+                                <td><input id="discount4" placeholder=""></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                </td>
+                                <td>
+                                    <button style="margin: 5px" class="btn btn-primary" onclick="submitBasicInfo()">
+                                        提交更改
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!--图片1-->
+        <div class="row">
+            <div class="panel panel-success" style="width: 1265px">
+                <div class="panel-heading">
+                    <h3 class="panel-title">图片1</h3>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-6">
+
+                        <div class="thumbnail" style="margin: 0px; border: none; width: 600px">
+                            <img id="detailPic1" src="../images/show/testImg.jpg">
+                            <div class="caption">
+                                <h3>图片1</h3>
+                                <p>显示在列表的缩略图</p>
+                                <p>
+                                    <button class="btn btn-primary" id="img1Btn" onclick="alterPic('picUploadDiv1')">
+                                        替换
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--修改界面-->
+                    <div id="picUploadDiv1" class="col-md-6" style="display: none;">
+                            <div class="form-group">
+                            <h3>图片替换</h3>
+                            <div id="picShow1" style="height: 305px; width: 610px; overflow: auto; margin-bottom: 10px">
+                                <!--预览图片-->
+                                <img id="pic1" src="">
+                            </div>
+                            <input type="file" id="inputfile1">
+                            <p class="help-block">请选择jpg、pgn格式</p>
+                        </div>
+                        <button class="btn btn-primary" id="picUploadBtn1" onclick="detailPicUploadBtn('detailPic1')">
+                            提交
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--图片2-->
+        <div class="row">
+            <div class="panel panel-success" style="width: 1265px">
+                <div class="panel-heading">
+                    <h3 class="panel-title">图片2</h3>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-6">
+
+                        <div class="thumbnail" style="margin: 0px; border: none; width: 600px">
+                            <img id="detailPic2" src="../images/show/testImg.jpg">
+                            <div class="caption">
+                                <h3>图片2</h3>
+                                <p>显示详细信息页面的大图</p>
+                                <p>
+                                    <button class="btn btn-primary" id="img2Btn" onclick="alterPic('picUploadDiv2')">
+                                        替换
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!--修改界面-->
+                    <div id="picUploadDiv2" class="col-md-6" style="display: none">
+                        <div class="form-group">
+                            <h3>图片替换</h3>
+                            <div id="picShow2" style="height: 305px; width: 610px; overflow: auto; margin-bottom: 10px">
+                                <!--预览图片-->
+                                <img id="pic2" src="">
+                            </div>
+                            <input type="file" id="inputfile2">
+                            <p class="help-block">请选择jpg、pgn格式</p>
+                        </div>
+                        <button class="btn btn-primary" id="picUploadBtn2" onclick="detailPicUploadBtn('detailPic2')">
+                            提交
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!--产品特色图片-->
+        <div class="row">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">产品特色</h3>
+                </div>
+                <div class="panel-body">
+                    <div id="featureImgDiv" class="col-md-6">
+                        <!--append()-->
+                        <!--
+                        <div id="featureImgDiv1" class="popover-options" style="width: 450px;">
+                            <a type="button" data-container="body" data-toggle="popover" data-content="<button type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;<button type='button' class='btn btn-danger'>删除</button>">
+                                <img id="featureImg1" src="../images/featureImg/nanjing1.png" class="img-thumbnail">
+                            </a>
+                        </div>
+
+                        <div id="featureImgDiv2" class="popover-options" style="width: 450px;">
+                            <a type="button" data-container="body" data-toggle="popover" data-content="<button type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;<button type='button' class='btn btn-danger'>删除</button>">
+                                <img id="featureImg2" src="../images/featureImg/nanjing3.png" class="img-thumbnail">
+                            </a>
+                        </div>
+
+                        <div id="featureImgDiv3" class="popover-options" style="width: 450px;">
+                            <a type="button" data-container="body" data-toggle="popover" data-content="
+                                <button type='button' class='btn btn-danger'>删除</button>&nbsp;&nbsp;
+                                <button type='button' class='btn btn-info'>替换</button>
+                            ">
+                                <img id="featureImg3" src="../images/featureImg/nanjing2.png" class="img-thumbnail">
+                            </a>
+                        </div>
+                        -->
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-primary" onclick="alterPic('featureImgUploadDiv')">+新增</button>
+                        <div id="featureImgUploadDiv" style="display: none;">
+                            <div class="form-group">
+                                <h3>图片替换</h3>
+                                <div style="height: 305px; width: 610px; overflow: auto; margin-bottom: 10px">
+                                    <!--预览图片-->
+                                    <img id="featureImg" src="">
+                                </div>
+                                <input type="file" id="inputfileFImg">
+                                <p class="help-block">请选择jpg、png格式</p>
+                                <div class="form-group">
+                                    <label for="name">图片位置</label>
+                                    <input id="featureImgOrder" type="text" class="form-control" id="name"
+                                           placeholder="请输入整数">
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="newFeatureImgInsert()">
+                            提交
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--行程详情-->
+        <div class="row">
+            <div class="panel panel-success" style="width: 1265px">
+                <div class="panel-heading">
+                    <h3 class="panel-title">行程详情</h3>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <table id="table3" class="table-striped" width="635px">
+                        <!--
+                        <tr>
+                            <th>时间</th>
+                            <th>地点</th>
+                            <th>事件</th>
+                            <th>时长</th>
+                            <th>图片1</th>
+                            <th>图片2</th>
+                            <th>图片3</th>
+                        </tr>
+                        <tr>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td>
+                                <div class="popover-options">
+                                    <a type="button" data-container="body" data-toggle="popover" data-placement="bottom" data-content="
+                                    <button type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;
+                                    <button type='button' class='btn btn-danger'>删除</button>
+                                    ">
+                                        <img src="../images/show/testImg.jpg">
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="popover-options">
+                                    <a type="button" data-container="body" data-toggle="popover" data-placement="bottom" data-content="
+                                    <button type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;
+                                    <button type='button' class='btn btn-danger'>删除</button>
+                                    ">
+                                        <img src="../images/show/testImg.jpg">
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="glyphicon glyphicon-plus"></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td>
+                                <div class="popover-options">
+                                    <a type="button" data-container="body" data-toggle="popover" data-placement="bottom" data-content="
+                                    <button type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;
+                                    <button type='button' class='btn btn-danger'>删除</button>
+                                    ">
+                                        <img src="../images/show/testImg.jpg">
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td><input placeholder=""></td>
+                            <td>
+                                <div class="popover-options">
+                                    <a type="button" data-container="body" data-toggle="popover" data-placement="bottom" data-content="
+                                    <button type='button' class='btn btn-info'>替换</button>&nbsp;&nbsp;
+                                    <button type='button' class='btn btn-danger'>删除</button>
+                                    ">
+                                        <img src="../images/show/testImg.jpg">
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="popover-options">
+                                    <a type="button" data-container="body" data-toggle="popover" data-placement="bottom" data-content="
+                                    <button type='button' class='btn btn-info' data-toggle='modal' data-target='#myModal'>替换</button>&nbsp;&nbsp;
+                                    <button type='button' class='btn btn-danger'>删除</button>
+                                    ">
+                                        <img src="../images/show/testImg.jpg">
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="glyphicon glyphicon-plus" data-toggle="modal" data-target="#myModal"></button>
+                            </td>
+                            <td>
+                                <button onclick="" type="button" class="btn btn-danger">删除该条</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td>
+                                <button style="width: 80px; height: 40px; margin: 15px" class="btn btn-primary" onclick="">
+                                    +新增
+                                </button>
+                            </td>
+                            <td>
+                                <button style="width: 80px; height: 40px; margin: 15px" class="btn btn-primary" onclick="">
+                                    提交
+                                </button>
+                            </td>
+                        </tr>
+                        -->
+                        <tr id='buttonTr'><td></td><td></td><td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <button style="width: 80px; height: 40px; margin: 15px" class="btn btn-primary" onclick="newDetailInsert()">
+                            +新增
+                            </button>
+                            </td>
+                        <td>
+                            <button style="width: 80px; height: 40px; margin: 15px" class="btn btn-primary" onclick="detailSubmit()">
+                            提交
+                            </button>
+                            </td>
+                        </tr>
+                    </table>
+                    <!-- 模态框1（Modal） -->
+                    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                        &times;
+                                    </button>
+                                    <h4 class="modal-title" id="myModalLabel">
+                                        行程详情展示图片上传
+                                    </h4>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <h3>图片预览</h3>
+                                        <input hidden id="forFeatureImgNum1"><!--传值用-->
+                                        <div style="height: 305px; width: 610px; overflow: auto; margin-bottom: 10px">
+                                            <!--预览图片-->
+                                            <img id="detailImg" src="">
+                                        </div>
+                                        <input type="file" id="inputfileDImg">
+                                        <p class="help-block">请选择jpg、png格式</p>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="detailImgAlter()">
+                                        提交更改
+                                    </button>
+                                </div>
+                            </div><!-- /.modal-content -->
+                        </div><!-- /.modal -->
+                    </div>
+                    <!-- 模态框1（Modal） -->
+                    <!-- 模态框2（Modal） -->
+                    <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                        &times;
+                                    </button>
+                                    <h4 class="modal-title" id="myModalLabe2">
+                                        行程详情展示图片上传
+                                    </h4>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <h3>图片预览</h3>
+                                        <input hidden id="forFeatureImgNum"><!--传值用-->
+                                        <div style="height: 305px; width: 610px; overflow: auto; margin-bottom: 10px">
+                                            <!--预览图片-->
+                                            <img id="featureImgAlertInput" src="">
+                                        </div>
+                                        <input type="file" id="inputfileAlertImg">
+                                        <p class="help-block">请选择jpg、png格式</p>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="featureImgAlert()">
+                                        提交更改
+                                    </button>
+                                </div>
+                            </div><!-- /.modal-content -->
+                        </div><!-- /.modal -->
+                    </div>
+                    <!-- 模态框2（Modal） -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
